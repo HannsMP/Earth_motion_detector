@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Simulación Sísmica</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+  <div class="container">
+    <div class="content">
+      <h2>Simulador de Red Sísmica</h2>
+
+      <div class="controls">
+        <div class="row">
+          <div class="input">
+            <label>
+              Escala del mapa (km por lado)
+              <input type="number" id="mapScale" value="10" step="1">
+            </label>
+          </div>
+          <div class="input">
+            <label>
+              Separación entre nodos (km)
+              <input type="number" id="nodeSpacing" value="1" step="0.1">
+            </label>
+          </div>
+        </div>
+
+        <button id="applyBtn">Aplicar Cambios</button>
+      </div>
+
+      <canvas id="mapCanvas" width="600" height="600"></canvas>
+
+      <div class="controls">
+        <div class="row">
+          <div class="input">
+            <label>
+              Magnitud (Richter)
+              <input type="number" id="magnitude" value="5" step="0.1">
+            </label>
+          </div>
+          <div class="input">
+            <label>
+              Duración sísmica (s)
+              <input type="number" id="duration" value="3" step="0.1">
+            </label>
+          </div>
+        </div>
+      </div>
+
+    </div>
+    <div class="content">
+      <canvas id="chartWave" width="400" height="290"></canvas>
+      <button id="clearCharts">Limpiar charts</button>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="script.js"></script>
+</body>
+
+</html>
