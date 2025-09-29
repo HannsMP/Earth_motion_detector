@@ -4,27 +4,40 @@
 <head>
   <meta charset="UTF-8">
   <title>Simulación Sísmica</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="/src/css/style.css">
 </head>
 
 <body>
 
   <div class="container">
-    <div class="content">
-      <h2>Simulador de Red Sísmica</h2>
+    <div class="content map">
+      <h2>SIMULADOR SISMICO</h2>
 
+      <canvas id="mapCanvas" width="600" height="600"></canvas>
+    </div>
+
+    <div class="content config">
       <div class="controls">
+        <h2>Configuración del Mapa</h2>
+
         <div class="row">
-          <div class="input">
-            <label>
+          <input type="radio" name="scaleDef" value="300" checked> <label for="scaleDef">300km</label>
+          <input type="radio" name="scaleDef" value="500"> <label for="scaleDef">500km</label>
+          <input type="radio" name="scaleDef" value="1000"> <label for="scaleDef">1000km</label>
+          <input type="radio" name="scaleDef" value="3000"> <label for="scaleDef">3000km</label>
+        </div>
+
+        <div class="row">
+          <div class="input-box">
+            <label style="display: none;">
               Escala del mapa (km por lado)
-              <input type="number" id="mapScale" value="10" step="1">
+              <input type="number" id="mapScale" value="300" step="1">
             </label>
           </div>
-          <div class="input">
+          <div class="input-box">
             <label>
               Separación entre nodos (km)
-              <input type="number" id="nodeSpacing" value="1" step="0.1">
+              <input type="number" id="nodeSpacing" value="20" step="0.1">
             </label>
           </div>
         </div>
@@ -32,34 +45,43 @@
         <button id="applyBtn">Aplicar Cambios</button>
       </div>
 
-      <canvas id="mapCanvas" width="600" height="600"></canvas>
-
       <div class="controls">
+        <h2>Configuración de Sismos</h2>
+
         <div class="row">
-          <div class="input">
+          <div class="input-box">
             <label>
               Magnitud (Richter)
               <input type="number" id="magnitude" value="5" step="0.1">
             </label>
           </div>
-          <div class="input">
+          <div class="input-box">
             <label>
               Duración sísmica (s)
-              <input type="number" id="duration" value="3" step="0.1">
+              <input type="number" id="duration" value="10" step="0.1">
             </label>
           </div>
         </div>
+        <button id="clearCharts">Limpiar charts</button>
+        <canvas id="chartWave" width="450" height="250"></canvas>
+        <span id="infoWave"></span>
+        <span id="warnWave"></span>
       </div>
-
-    </div>
-    <div class="content">
-      <canvas id="chartWave" width="400" height="290"></canvas>
-      <button id="clearCharts">Limpiar charts</button>
     </div>
   </div>
 
+  <button id="fullScreenBtn" onclick="document.querySelector('.container').classList.toggle('fullscreen');
+    localStorage.setItem('fullscreen', document.querySelector('.container').classList.contains('fullscreen'))"
+    style="font-size: 2rem;">
+    +
+  </button>
+
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="script.js"></script>
+  <script src="/src/js/ChartLine.js"></script>
+  <script src="/src/js/NodeModule.js"></script>
+  <script src="/src/js/Wave.js"></script>
+  <script src="/src/js/Simulator.js"></script>
+  <script src="/src/script.js"></script>
 </body>
 
 </html>
