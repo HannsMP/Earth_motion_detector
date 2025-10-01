@@ -1,6 +1,30 @@
 // --- Clase Nodo ---
 
 class NodeModule {
+  static RADIUS = 3;
+  static HITBOXRADIUS = 5;
+  static COLLECTION = [];
+
+  /**
+   * @param {number} x 
+   * @param {number} y 
+   * @returns {NodeModule}
+   */
+  static FIND(x, y) {
+    let foundNode = null;
+
+    for (let node of NodeModule.COLLECTION) {
+      const dist = distance(x, y, node.x, node.y);
+
+      if (dist <= NodeModule.HITBOXRADIUS) {
+        foundNode = node;
+        break;
+      }
+    }
+
+    return foundNode;
+  }
+
   /** 
    * @param {Simulator} simulator 
    * @param {number} q 
@@ -8,7 +32,6 @@ class NodeModule {
    */
   constructor(simulator, q, r) {
     this.simulator = simulator;
-    this.radius = 3;
     this.q = q;
     this.r = r;
 
@@ -22,16 +45,22 @@ class NodeModule {
 
     this.x = centerX + this.simulator.spacingPx * Math.sqrt(3) * (q + r / 2);
     this.y = centerY + this.simulator.spacingPx * (3 / 2) * r;
+
+    NodeModule.COLLECTION.push(this);
   }
 
   reset() {
     /** @type {keyof NODE_STATES} */
     this.state = "sintiendo";
 
-    /** @type {} */
-    this.acceleration = null;
+    /** @type {number} */
+    this.acceleration = 0;
+    /** @type {number} */
+    this.acceleration = 0;
     this.order = 0;
+    /** @type {NodeModule?} */
     this.firstNode = null;
+
     this.confirmation = [{ counter: 0, max: 6 }, { counter: 0, max: 12 }];
   }
 
@@ -61,7 +90,8 @@ class NodeModule {
     for (const wave of this.simulator.waves) {
       if (this.checkWaveCollision(wave)) {
         this.state = 'detectado';
-        this.acceleration = wave.PGA;
+        this.pga = wave.PGA;
+        this.acceleration = Math.max(this.acceleration, this.pga);
 
         if (this.firstNode) {
           this.firstNode.confirm(this);
@@ -93,7 +123,7 @@ class NodeModule {
   confirm(node) {
     if (node.order < 2 || 3 < node.order) return
 
-    let order = node.order - 2; // indice (0, 1)
+    let order = node.order - 2;
     let { counter, max } = this.confirmation[order];
 
   }
@@ -102,7 +132,7 @@ class NodeModule {
     let ctx = this.simulator.ctx;
 
     ctx.beginPath();
-    ctx.arc(this.x, this.y, this.radius, 0, Simulator.angleComplete);
+    ctx.arc(this.x, this.y, NodeModule.RADIUS, 0, Simulator.angleComplete);
     ctx.fillStyle = NODE_STATES[this.state][0];
     ctx.fill();
     ctx.strokeStyle = NODE_STATES[this.state][1];
@@ -135,6 +165,26 @@ function distance(ax, ay, bx, by) {
   let cy = by - ay;
   return Math.sqrt((cx ** 2) + (cy ** 2));
 }
+
+/**
+ * @param {number[]} sensorTimes 
+ */
+function estimateOrigin(sensorTimes) {
+  const minTime = Math.min(...sensorTimes);
+  const relativeTimes = sensorTimes.map(t => t - minTime);
+
+  // Rank sensors by detection time
+  const ranked = relativeTimes
+    .map((t, i) => ({ sensor: i, time: t }))
+    .sort((a, b) => a.time - b.time);
+
+  return {
+    likelyOriginNear: ranked[0].sensor,
+    symmetryBetween: relativeTimes.filter(t => t === 0).map((_, i) => i),
+    timeDifferences: relativeTimes
+  };
+}
+
 
 // --- Colores por estado [interior, borde] ---
 const NODE_STATES = {

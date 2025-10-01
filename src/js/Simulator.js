@@ -32,6 +32,22 @@ class Simulator {
     this.waves = new Set();
 
     this.lastTime = null;
+
+
+    this.element_mapCanvas.addEventListener("mousedown", e => {
+      e.preventDefault();
+      if (e.button == 0)
+        return this.addWave(e);
+      if (e.button == 1) {
+        return this.showNode(e);
+      }
+    });
+
+
+    this.element_mapCanvas.addEventListener('wheel', e => {
+      e.preventDefault();
+    }, { passive: false });
+
   }
 
   applySettings() {
@@ -48,8 +64,7 @@ class Simulator {
     this.diagonal = ((this.width ** 2) + (this.height ** 2)) ** 0.5;
     this.radius = this.maxLength / this.spacingPx;
 
-
-    this.element_mapCanvas.addEventListener("click", (e) => this.addWave(e));
+    NodeModule.COLLECTION = [];
 
     this.generateNodes();
     this.linkNeighbors();
@@ -102,7 +117,27 @@ class Simulator {
     const canvasX = x * scaleX;
     const canvasY = y * scaleY;
 
-    this.waves.add(new Wave(this, canvasX, canvasY));
+    let wave = new Wave(this, canvasX, canvasY);
+    this.waves.add(wave);
+  }
+
+  showNode(e) {
+    const rect = this.element_mapCanvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    const scaleX = this.element_mapCanvas.width / rect.width;
+    const scaleY = this.element_mapCanvas.height / rect.height;
+
+    const canvasX = x * scaleX;
+    const canvasY = y * scaleY;
+
+    // Buscar nodo dentro del radio
+    let foundNode = NodeModule.FIND(canvasX, canvasY);
+
+    if (!foundNode) return;
+
+
   }
 
   update(dt) {

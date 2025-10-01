@@ -1,5 +1,19 @@
 {
+  "type": "commonjs",
   "devDependencies": {
     "@types/chart.js": "^4.0.1"
-  }
+  },
+  "name": "earth_motion_detector",
+  "description": "",
+  "version": "1.0.0",
+  "main": "index.js",
+  "dependencies": {
+    "chart.js": "^4.5.0"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
 }

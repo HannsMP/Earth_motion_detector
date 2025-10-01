@@ -29,9 +29,9 @@
 
         <div class="row">
           <div class="input-box">
-            <label style="display: none;">
+            <label>
               Escala del mapa (km por lado)
-              <input type="number" id="mapScale" value="300" step="1">
+              <input type="number" id="mapScale" value="300" step="1" disabled>
             </label>
           </div>
           <div class="input-box">
@@ -66,6 +66,10 @@
         <canvas id="chartWave" width="450" height="250"></canvas>
         <span id="infoWave"></span>
         <span id="warnWave"></span>
+      </div>
+
+      <div class="controls">
+        <span id="infoNode"></span>
       </div>
     </div>
   </div>

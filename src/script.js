@@ -34,15 +34,6 @@ document.addEventListener('DOMContentLoaded', () => {
   createLocalStorage(element_duration, 'element_duration');
 
   let valeu_elements_scale = localStorage.getItem('elements_scale') || '300';
-  elements_scale.forEach(el => {
-    if (el.value == valeu_elements_scale) el.checked = true;
-    el.addEventListener('click', () => {
-      let { value } = el;
-      localStorage.setItem('elements_scale', value);
-      element_img.src = `/src/maps/${value}km.png`;
-      element_mapScale.value = value;
-    });
-  })
   element_img.src = `/src/maps/${valeu_elements_scale}km.png`;
 
   const simulator = new Simulator(
@@ -59,6 +50,22 @@ document.addEventListener('DOMContentLoaded', () => {
     simulator.applySettings();
     simulator.loop();
   };
+
+  elements_scale.forEach(el => {
+    if (el.value == valeu_elements_scale) {
+      el.checked = true
+      simulator.applySettings();
+      element_mapScale.value = el.value;
+    };
+
+    el.addEventListener('click', () => {
+      let { value } = el;
+      localStorage.setItem('elements_scale', value);
+      element_img.src = `/src/maps/${value}km.png`;
+      element_mapScale.value = value;
+      simulator.applySettings();
+    });
+  })
 
   element_applyBtn.addEventListener("click", () => {
     simulator.applySettings();

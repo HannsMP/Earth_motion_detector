@@ -118,6 +118,15 @@ body {
   }
 }
 
+#chartWave {
+  width: 25rem !important;
+  height: 14rem !important;
+  position: fixed;
+  bottom: 0;
+  right: 0;
+  margin: .5rem;
+}
+
 #fullScreenBtn {
   background-color: rgb(34, 35, 39);
   color: rgb(170, 170, 170);
@@ -184,14 +193,5 @@ body {
   input {
     border: 2px solid rgb(48, 49, 53);
     background-color: rgb(34, 35, 39);
-  }
-
-  #chartWave {
-    width: 25rem !important;
-    height: 14rem !important;
-    position: fixed;
-    bottom: 0;
-    right: 0;
-    margin: .5rem;
   }
 }
