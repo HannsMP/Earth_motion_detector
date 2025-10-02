@@ -1,6 +1,6 @@
 // --- Clase Nodo ---
 
-class NodeModule {
+class DetectorNodes {
   static RADIUS = 3;
   static HITBOXRADIUS = 5;
   static COLLECTION = [];
@@ -8,15 +8,15 @@ class NodeModule {
   /**
    * @param {number} x 
    * @param {number} y 
-   * @returns {NodeModule}
+   * @returns {DetectorNodes}
    */
   static FIND(x, y) {
     let foundNode = null;
 
-    for (let node of NodeModule.COLLECTION) {
+    for (let node of DetectorNodes.COLLECTION) {
       const dist = distance(x, y, node.x, node.y);
 
-      if (dist <= NodeModule.HITBOXRADIUS) {
+      if (dist <= DetectorNodes.HITBOXRADIUS) {
         foundNode = node;
         break;
       }
@@ -35,7 +35,7 @@ class NodeModule {
     this.q = q;
     this.r = r;
 
-    /** @type {Map<string, NodeModule>} */
+    /** @type {Map<string, DetectorNodes>} */
     this.neighbors = new Map;
 
     this.reset();
@@ -46,7 +46,7 @@ class NodeModule {
     this.x = centerX + this.simulator.spacingPx * Math.sqrt(3) * (q + r / 2);
     this.y = centerY + this.simulator.spacingPx * (3 / 2) * r;
 
-    NodeModule.COLLECTION.push(this);
+    DetectorNodes.COLLECTION.push(this);
   }
 
   reset() {
@@ -58,7 +58,7 @@ class NodeModule {
     /** @type {number} */
     this.acceleration = 0;
     this.order = 0;
-    /** @type {NodeModule?} */
+    /** @type {DetectorNodes?} */
     this.firstNode = null;
 
     this.confirmation = [{ counter: 0, max: 6 }, { counter: 0, max: 12 }];
@@ -90,7 +90,7 @@ class NodeModule {
     for (const wave of this.simulator.waves) {
       if (this.checkWaveCollision(wave)) {
         this.state = 'detectado';
-        this.pga = wave.PGA;
+        this.pga = wave.PGA();
         this.acceleration = Math.max(this.acceleration, this.pga);
 
         if (this.firstNode) {
@@ -106,7 +106,7 @@ class NodeModule {
     }
   }
 
-  /** @param {NodeModule} node  */
+  /** @param {DetectorNodes} node  */
   listenWave(node) {
     if (this.order) return;
 
@@ -119,7 +119,7 @@ class NodeModule {
       this.firstNode = node;
   }
 
-  /** @param {NodeModule} node  */
+  /** @param {DetectorNodes} node  */
   confirm(node) {
     if (node.order < 2 || 3 < node.order) return
 
@@ -132,7 +132,7 @@ class NodeModule {
     let ctx = this.simulator.ctx;
 
     ctx.beginPath();
-    ctx.arc(this.x, this.y, NodeModule.RADIUS, 0, Simulator.angleComplete);
+    ctx.arc(this.x, this.y, DetectorNodes.RADIUS, 0, Simulator.angleComplete);
     ctx.fillStyle = NODE_STATES[this.state][0];
     ctx.fill();
     ctx.strokeStyle = NODE_STATES[this.state][1];

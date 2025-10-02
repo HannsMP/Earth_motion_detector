@@ -77,8 +77,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   let magnitudeChange = () => {
     let magnitude = parseFloat(element_magnitude.value);
-    let distanceMax = Wave.distanceMax(magnitude).toFixed(2);
-    let durationMax = Wave.durationMax(magnitude).toFixed(2);
+    let distanceMax = Wave.DISTANCE_MAX(magnitude).toFixed(2);
+    let durationMax = Wave.DURATION_MAX(magnitude).toFixed(2);
 
     element_infoWave.innerText
       = `Distancia maxima: ${distanceMax} km`

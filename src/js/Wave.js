@@ -1,39 +1,41 @@
 
 // --- Clase Onda ---
 class Wave {
-  // ecuaciones empíricas (km, s)
-  static distanceMax(richter) {
+  // ecuacion empíric (km)
+  static DISTANCE_MAX(richter) {
     return 1.8693 * Math.exp(0.7076 * richter); // km
   }
-  static durationMax(richter) {
+  // ecuacion empíric (s)
+  static DURATION_MAX(richter) {
     return 2.7344 * Math.exp(0.4805 * richter); // s
   }
 
   // easing suave: acelera al inicio y desacelera al final
-  static easeInOutCubic(t) {
+  static EASE_IN_OUT_CUBIC(t) {
     // t en [0,1]
-    return t < 0.5
-      ? 4 * t * t * t
-      : 1 - Math.pow(-2 * t + 2, 3) / 2;
+    if (t < 0.5)
+      return 4 * (t ** 3);
+
+    return 1 - (Math.pow(-2 * t + 2, 3) / 2);
   }
 
-  get outerRadius() {
-    return this.radius;
-  }
-  get innerRadius() {
-    return Math.max(0, this.radius - this.thicknessPx);
+  is_out_hitbox() {
+    return this.radius >= this.lifeRadiusPx
+      || this.velocity <= 0
+      && this.elapsed >= this.travelDuration
   }
 
-  get PGD() {
+  // amplitud maxima 
+  PGD() {
     if (!this.signal.length) return 0;
     return Math.max(...this.signal.map(s => Math.abs(s.amp)));
   }
-  get PGV() {
-    // velocidad en km/s (convertir px/s -> km/s)
+  // velocidad en km/s (convertir px/s -> km/s)
+  PGV() {
     return this._velocityPxPerS / this.simulator.kmToPx;
   }
-  get PGA() {
-    // aceleración en km/s^2
+  // aceleración en km/s^2
+  PGA() {
     return this._accelPxPerS2 / this.simulator.kmToPx;
   }
 
@@ -53,8 +55,8 @@ class Wave {
     this.pulseDuration = parseFloat(simulator.element_duration.value);
 
     // --- Distancia total y travel duration por ecuaciones empíricas ---
-    this.totalDistanceKm = Wave.distanceMax(this.magnitude); // km
-    this.travelDuration = Wave.durationMax(this.magnitude);  // s
+    this.totalDistanceKm = Wave.DISTANCE_MAX(this.magnitude); // km
+    this.travelDuration = Wave.DURATION_MAX(this.magnitude);  // s
 
     // conversión km -> px (simulator.kmToPx = px / km)
     this.totalRadiusPx = this.totalDistanceKm * this.simulator.kmToPx;
@@ -103,7 +105,7 @@ class Wave {
     const tNorm = Math.min(this.elapsed / T, 1);
 
     // eased progress [0..1]
-    const eased = Wave.easeInOutCubic(tNorm);
+    const eased = Wave.EASE_IN_OUT_CUBIC(tNorm);
 
     // nuevo radio en px (easing sobre la distancia total)
     const newRadius = eased * this.totalRadiusPx;
@@ -130,7 +132,7 @@ class Wave {
     this.alpha = 0.8 - (0.6 * progressPhys);
 
     // generar ruido
-    if (this.outerRadius < this.thicknessPx) {
+    if (this.radius < this.thicknessPx) {
       const sample = (Math.random() - 0.5) * this.amplitudeMax;
       this.signal.push({ t: this.elapsed, amp: sample });
     }
@@ -148,12 +150,12 @@ class Wave {
     ctx.stroke();
     ctx.setLineDash([]);
 
-    if (this.outerRadius <= 0) return;
+    if (this.radius <= 0) return;
 
-    if (this.outerRadius < this.thicknessPx) {
+    if (this.radius < this.thicknessPx) {
       // fase sólida: disco relleno
       ctx.beginPath();
-      ctx.arc(this.x, this.y, this.outerRadius, 0, Simulator.angleComplete);
+      ctx.arc(this.x, this.y, this.radius, 0, Simulator.angleComplete);
       ctx.fillStyle = color;
       ctx.fill();
       ctx.strokeStyle = color;

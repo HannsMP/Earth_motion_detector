@@ -4,6 +4,12 @@ class Simulator {
   static speed = 0.7;
   static angleComplete = Math.PI * 2;
 
+  /**
+   * @type {EventListener<{
+   *   'find_module': [DetectorNodes]
+   * }>}
+   */
+  events = new EventListener();
   /** 
    * @param {HTMLImageElement} element_img 
    * @param {HTMLCanvasElement} element_mapCanvas 
@@ -26,7 +32,7 @@ class Simulator {
 
     this.chart_waves = new ChartLine(this, element_chartWave);
 
-    /** @type {Map<string, NodeModule>} */
+    /** @type {Map<string, DetectorNodes>} */
     this.nodes = new Map;
     /** @type {Set<Wave>} */
     this.waves = new Set();
@@ -64,7 +70,7 @@ class Simulator {
     this.diagonal = ((this.width ** 2) + (this.height ** 2)) ** 0.5;
     this.radius = this.maxLength / this.spacingPx;
 
-    NodeModule.COLLECTION = [];
+    DetectorNodes.COLLECTION = [];
 
     this.generateNodes();
     this.linkNeighbors();
@@ -75,7 +81,7 @@ class Simulator {
 
     for (let q = -this.radius; q <= this.radius; q++) {
       for (let r = -this.radius; r <= this.radius; r++) {
-        const node = new NodeModule(this, q, r);
+        const node = new DetectorNodes(this, q, r);
         if (
           node.x >= 0 && node.x <= this.width &&
           node.y >= 0 && node.y <= this.height
@@ -133,7 +139,7 @@ class Simulator {
     const canvasY = y * scaleY;
 
     // Buscar nodo dentro del radio
-    let foundNode = NodeModule.FIND(canvasX, canvasY);
+    let foundNode = DetectorNodes.FIND(canvasX, canvasY);
 
     if (!foundNode) return;
 
@@ -144,7 +150,7 @@ class Simulator {
     this.waves.forEach((wave) => {
       wave.update(dt);
 
-      if (wave.outerRadius >= wave.lifeRadiusPx || wave.velocity <= 0 && wave.elapsed >= wave.travelDuration)
+      if (wave.is_out_hitbox())
         this.waves.delete(wave);
     });
 
