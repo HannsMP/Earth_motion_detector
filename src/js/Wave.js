@@ -22,7 +22,7 @@ class Wave {
   is_out_hitbox() {
     return this.radius >= this.lifeRadiusPx
       || this.velocity <= 0
-      && this.elapsed >= this.travelDuration
+      && this.elapsed >= this.travelDuration;
   }
 
   // amplitud maxima 
@@ -144,7 +144,7 @@ class Wave {
 
     ctx.beginPath();
     ctx.setLineDash([6, 4]);
-    ctx.arc(this.x, this.y, this.totalRadiusPx, 0, Simulator.angleComplete);
+    ctx.arc(this.x, this.y, this.totalRadiusPx, 0, Simulator.ANGLE_COMPLETE);
     ctx.strokeStyle = `rgba(94,22,22,.6)`;
     ctx.lineWidth = 1;
     ctx.stroke();
@@ -155,7 +155,7 @@ class Wave {
     if (this.radius < this.thicknessPx) {
       // fase sólida: disco relleno
       ctx.beginPath();
-      ctx.arc(this.x, this.y, this.radius, 0, Simulator.angleComplete);
+      ctx.arc(this.x, this.y, this.radius, 0, Simulator.ANGLE_COMPLETE);
       ctx.fillStyle = color;
       ctx.fill();
       ctx.strokeStyle = color;
@@ -164,7 +164,7 @@ class Wave {
     } else {
       // fase anillo hueco (inner..outer)
       ctx.beginPath();
-      ctx.arc(this.x, this.y, this.radius - this.offset, 0, Simulator.angleComplete);
+      ctx.arc(this.x, this.y, this.radius - this.offset, 0, Simulator.ANGLE_COMPLETE);
       ctx.closePath();
 
       ctx.strokeStyle = color;
@@ -173,7 +173,7 @@ class Wave {
 
       // punto central
       ctx.beginPath();
-      ctx.arc(this.x, this.y, 1, 0, Simulator.angleComplete);
+      ctx.arc(this.x, this.y, 1, 0, Simulator.ANGLE_COMPLETE);
       ctx.fillStyle = color;
       ctx.fill();
     }

@@ -14,6 +14,10 @@
       <h2>SIMULADOR SISMICO</h2>
 
       <canvas id="mapCanvas" width="600" height="600"></canvas>
+      <div class="row">
+        <button id="applyBtn">Aplicar Cambios</button>
+        <button id="clearCharts">Limpiar charts</button>
+      </div>
     </div>
 
     <div class="content config">
@@ -42,7 +46,6 @@
           </div>
         </div>
 
-        <button id="applyBtn">Aplicar Cambios</button>
       </div>
 
       <div class="controls">
@@ -62,15 +65,14 @@
             </label>
           </div>
         </div>
-        <button id="clearCharts">Limpiar charts</button>
         <canvas id="chartWave" width="450" height="250"></canvas>
         <span id="infoWave"></span>
         <span id="warnWave"></span>
       </div>
 
-      <div class="controls">
+      <div class="controls" style="width: 100%;">
         <h3>Secuencia de Nodos</h3>
-        <span id="infoNode"></span>
+        <textarea id="infoNode"></textarea>
       </div>
     </div>
   </div>
@@ -85,7 +87,7 @@
   <script src="/src/libs/EventListener.js"></script>
 
   <script src="/src/js/ChartLine.js"></script>
-  <script src="/src/js/NodeModule.js"></script>
+  <script src="/src/js/DetectorNodes.js"></script>
   <script src="/src/js/Wave.js"></script>
   <script src="/src/js/Simulator.js"></script>
   <script src="/src/script.js"></script>

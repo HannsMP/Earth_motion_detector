@@ -9,6 +9,7 @@ function createLocalStorage(element, name) {
 
 // --- Inicialización ---
 document.addEventListener('DOMContentLoaded', () => {
+
   document.querySelector('.container').classList
     .toggle('fullscreen', localStorage.getItem('fullscreen') == 'true');
 
@@ -88,6 +89,9 @@ document.addEventListener('DOMContentLoaded', () => {
     let whereAlert = distanceMax > mapScale / 2;
     let whereWarn = whereAlert && distanceMax > mapScale;
 
+    element_mapCanvas.className = '';
+    element_infoWave.className = '';
+
     if (whereWarn) {
       element_mapCanvas.classList.toggle('warn', whereWarn);
       element_infoWave.classList.toggle('warn-text', whereWarn);
@@ -100,4 +104,5 @@ document.addEventListener('DOMContentLoaded', () => {
   element_magnitude.addEventListener('input', magnitudeChange);
 
   magnitudeChange();
+
 })

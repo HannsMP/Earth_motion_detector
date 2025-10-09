@@ -1,8 +1,8 @@
 // --- Clase Simulador ---
 
 class Simulator {
-  static speed = 0.7;
-  static angleComplete = Math.PI * 2;
+  static SPEED = 0.7;
+  static ANGLE_COMPLETE = Math.PI * 2;
 
   /**
    * @type {EventListener<{
@@ -77,17 +77,16 @@ class Simulator {
   }
 
   generateNodes() {
+    let radius = parseInt(this.radius);
     this.nodes = new Map;
-
-    for (let q = -this.radius; q <= this.radius; q++) {
-      for (let r = -this.radius; r <= this.radius; r++) {
+    
+    for (let q = -radius; q <= radius; q++) {
+      for (let r = -radius; r <= radius; r++) {
         const node = new DetectorNodes(this, q, r);
-        if (
-          node.x >= 0 && node.x <= this.width &&
-          node.y >= 0 && node.y <= this.height
-        ) {
+        if (node.x >= 0 && node.x <= this.width &&
+          node.y >= 0 && node.y <= this.height)
+
           this.nodes.set(`${node.q},${node.r}`, node);
-        }
       }
     }
   }

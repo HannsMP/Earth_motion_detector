@@ -1,13 +1,13 @@
 // --- Clase ChartLine ---
 
 class ChartLine {
-  static colors = [
+  static COLORS = [
     'orange', 'purple', 'red', 'blue', 'green',
     'brown', 'teal', 'pink', 'gray', 'cyan'
   ];
 
   static randomColor(i) {
-    return ChartLine.colors[i % ChartLine.colors.length];
+    return ChartLine.COLORS[i % ChartLine.COLORS.length];
   }
 
   /**

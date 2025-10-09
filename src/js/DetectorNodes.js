@@ -2,7 +2,7 @@
 
 class DetectorNodes {
   static RADIUS = 3;
-  static HITBOXRADIUS = 5;
+  static HITBOX_RADIUS = 5;
   static COLLECTION = [];
 
   /**
@@ -16,7 +16,7 @@ class DetectorNodes {
     for (let node of DetectorNodes.COLLECTION) {
       const dist = distance(x, y, node.x, node.y);
 
-      if (dist <= DetectorNodes.HITBOXRADIUS) {
+      if (dist <= DetectorNodes.HITBOX_RADIUS) {
         foundNode = node;
         break;
       }
@@ -24,6 +24,14 @@ class DetectorNodes {
 
     return foundNode;
   }
+
+  /** 
+   * @type {EventListener<{
+   *   'collision_before': [Node: DetectorNodes]
+   *   'collision_after': [Node: DetectorNodes]
+   * }>} 
+   */
+  EVENTS = new EventListener();
 
   /** 
    * @param {Simulator} simulator 
@@ -89,6 +97,7 @@ class DetectorNodes {
 
     for (const wave of this.simulator.waves) {
       if (this.checkWaveCollision(wave)) {
+        this.EVENTS.emit('collision_before', this);
         this.state = 'detectado';
         this.pga = wave.PGA();
         this.acceleration = Math.max(this.acceleration, this.pga);
@@ -101,6 +110,7 @@ class DetectorNodes {
 
         this.neighbors.forEach(node => node.listenWave(this));
 
+        this.EVENTS.emit('collision_after', this);
         break; // se queda con el primer impacto detectado
       }
     }
@@ -132,7 +142,7 @@ class DetectorNodes {
     let ctx = this.simulator.ctx;
 
     ctx.beginPath();
-    ctx.arc(this.x, this.y, DetectorNodes.RADIUS, 0, Simulator.angleComplete);
+    ctx.arc(this.x, this.y, DetectorNodes.RADIUS, 0, Simulator.ANGLE_COMPLETE);
     ctx.fillStyle = NODE_STATES[this.state][0];
     ctx.fill();
     ctx.strokeStyle = NODE_STATES[this.state][1];
@@ -140,14 +150,14 @@ class DetectorNodes {
     ctx.stroke();
 
     ctx.fillStyle = "black";
-    ctx.font = "6px Arial";
+    ctx.font = "8px Arial";
     ctx.textAlign = "center";
-    ctx.fillText(`${this.q}:${this.r}`, this.x, this.y + 12);
+    ctx.fillText(`(${this.q}: ${this.r})`, this.x, this.y + 12);
 
     // Magnitud encima
     if (this.acceleration !== null) {
       ctx.fillStyle = "black";
-      ctx.font = "10px Arial";
+      ctx.font = "8px Arial";
       ctx.textAlign = "center";
       ctx.fillText((this.acceleration * 1000).toFixed(1), this.x, this.y - 12);
     }
