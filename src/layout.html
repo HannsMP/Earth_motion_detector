@@ -13,31 +13,39 @@
     <div class="content map">
       <h2>SIMULADOR SISMICO</h2>
 
-      <canvas id="mapCanvas" width="600" height="600"></canvas>
-      <div class="row">
-        <button id="applyBtn">Aplicar Cambios</button>
-        <button id="clearCharts">Limpiar charts</button>
+      <canvas id="mapCanvas" width="700" height="700"></canvas>
+      <div class="controls">
+        <div class="row" style="gap: 3rem;">
+          <div class="input-box">
+            <input type="radio" name="scaleDef" value="300" checked> <label for="scaleDef">300 km</label>
+          </div>
+          <div class="input-box">
+            <input type="radio" name="scaleDef" value="500"> <label for="scaleDef">500 km</label>
+          </div>
+          <div class="input-box">
+            <input type="radio" name="scaleDef" value="1000"> <label for="scaleDef">1000 km</label>
+          </div>
+          <div class="input-box">
+            <input type="radio" name="scaleDef" value="3000"> <label for="scaleDef">3000 km</label>
+          </div>
+        </div>
+        <div class="row">
+          <button id="applyBtn">Reiniciar</button>
+        </div>
       </div>
     </div>
 
     <div class="content config">
+      <div class="container-chart">
+        <button id="clearCharts">Limpiar Estadisticas</button>
+        <canvas id="chartWave" width="500" height="100"></canvas>
+      </div>
+
       <div class="controls">
-        <h2>Configuración del Mapa</h2>
+        <h3>Configuración del Mapa</h3>
+
 
         <div class="row">
-          <input type="radio" name="scaleDef" value="300" checked> <label for="scaleDef">300km</label>
-          <input type="radio" name="scaleDef" value="500"> <label for="scaleDef">500km</label>
-          <input type="radio" name="scaleDef" value="1000"> <label for="scaleDef">1000km</label>
-          <input type="radio" name="scaleDef" value="3000"> <label for="scaleDef">3000km</label>
-        </div>
-
-        <div class="row">
-          <div class="input-box">
-            <label>
-              Escala del mapa (km por lado)
-              <input type="number" id="mapScale" value="300" step="1" disabled>
-            </label>
-          </div>
           <div class="input-box">
             <label>
               Separación entre nodos (km)
@@ -49,7 +57,7 @@
       </div>
 
       <div class="controls">
-        <h2>Configuración de Sismos</h2>
+        <h3>Configuración del Sismo</h3>
 
         <div class="row">
           <div class="input-box">
@@ -65,23 +73,30 @@
             </label>
           </div>
         </div>
-        <canvas id="chartWave" width="450" height="250"></canvas>
-        <span id="infoWave"></span>
-        <span id="warnWave"></span>
+        <span id="predictWave"></span>
       </div>
 
       <div class="controls" style="width: 100%;">
         <h3>Secuencia de Nodos</h3>
-        <textarea id="infoNode"></textarea>
+        <span id="infoWave"> </span>
+      </div>
+
+      <div class="controls" style="width: 100%;">
+        <h3>Secuencia de Nodos</h3>
+        <span id="infoModule"> </span>
+      </div>
+
+      <div class="controls" style="width: 100%;">
+        <h3>Secuencia de Nodos</h3>
+        <div id="selectorModule" class="col" style="gap:.5rem">
+        </div>
       </div>
     </div>
   </div>
 
-  <button id="fullScreenBtn" onclick="document.querySelector('.container').classList.toggle('fullscreen');
-    localStorage.setItem('fullscreen', document.querySelector('.container').classList.contains('fullscreen'))"
-    style="font-size: 2rem;">
-    +
-  </button>
+  <button id="fullScreenBtn" style="font-size: 2rem;"><span>
+      <>
+    </span></button>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="/src/libs/EventListener.js"></script>

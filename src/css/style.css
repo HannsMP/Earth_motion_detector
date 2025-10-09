@@ -20,6 +20,21 @@ body {
   align-items: center;
 }
 
+canvas {
+  border-radius: .5rem;
+  border: 2px solid black;
+  background: white;
+  transition: box-shadow .2s;
+}
+
+
+button {
+  width: 15rem;
+  height: 1rem;
+  padding: .3rem;
+  border-radius: .4rem;
+}
+
 .row {
   display: flex;
   flex-direction: row;
@@ -75,11 +90,6 @@ body {
         border-radius: .5rem .5rem 0 0;
         padding: .2rem
       }
-
-      button {
-        width: 15rem;
-        height: 1rem;
-      }
     }
   }
 
@@ -87,30 +97,57 @@ body {
     background-color: rgb(251, 251, 251);
     padding: 1rem;
     border-radius: 1rem;
-    
 
-      button {
-        width: 15rem;
-        height: 1rem;
-        padding: .3rem;
-        border-radius: .4rem;
-      }
+    canvas {
+      height: 45rem;
+    }
   }
 
   .content.config {
     background-color: rgb(221, 221, 224);
     padding: 1rem;
     border-radius: 1rem;
-  }
 
-  canvas {
-    border-radius: .5rem;
-    border: 2px solid black;
-    background: white;
+
+    #selectorModule {
+      background-color: rgb(251, 251, 251);
+      width: 26rem;
+      height: 15rem;
+      gap: 1rem;
+      padding: .5rem;
+      border-radius: .5rem;
+      overflow: auto;
+
+      .info-box {
+        display: flex;
+        flex-direction: row;
+        /* justify-content: space-between; */
+        padding-bottom: .2rem;
+        border-bottom: 1px dashed rgb(34, 35, 39);
+
+        * {
+          font-size: 13px;
+        }
+
+        button {
+          background-color: rgb(188, 255, 255);
+          width: 2rem;
+          height: 1rem;
+          border-width: 1px;
+          padding: .1rem;
+          margin-right: .5rem;
+        }
+
+        button:hover {
+          border-color: transparent;
+        }
+      }
+    }
   }
 
   .alert {
     border: 2px solid orange;
+    box-shadow: 0 0 15px 0 orange;
   }
 
   .alert-text {
@@ -119,45 +156,34 @@ body {
 
   .warn {
     border: 2px solid red;
+    box-shadow: 0 0 20px 0 red;
   }
 
   .warn-text {
     color: red;
   }
-
-  #infoNode{
-    width: 26rem;
-    height: 10rem;
-  }
 }
 
-#chartWave {
-  width: 25rem !important;
-  height: 14rem !important;
+.container-chart {
+  width: auto;
+  height: 10rem;
   position: fixed;
   bottom: 0;
   right: 0;
   margin: .5rem;
+
+  #clearCharts {
+    position: absolute;
+    bottom: calc(100% + .5rem);
+    right: 0;
+  }
+
+  #chartWave {
+    width: 100%;
+    height: 100%;
+  }
 }
 
-#fullScreenBtn {
-  background-color: rgb(34, 35, 39);
-  color: rgb(170, 170, 170);
-  border: none;
-  position: fixed;
-  width: 3rem;
-  height: 3rem;
-  bottom: 0;
-  left: 0;
-  margin: .5rem;
-  border-radius: .5rem;
-  border: 2px solid rgb(48, 49, 53);
-}
-
-#fullScreenBtn:hover {
-  background-color: rgb(57, 58, 63);
-  color: rgb(251, 251, 251);
-}
 
 .container.fullscreen {
   background-color: rgb(251, 251, 251);
@@ -166,7 +192,13 @@ body {
   padding: 0;
   gap: 0;
 
+  h2 {
+    display: none !important;
+  }
+
   .content {
+    height: 90vh;
+
     .controls {
       * {
         color: rgb(96, 97, 101);
@@ -194,8 +226,12 @@ body {
       color: rgb(148, 147, 156);
     }
 
+    .controls {
+      gap: 2rem;
+    }
+
     canvas {
-      height: 85vh;
+      height: 90%;
     }
   }
 
@@ -207,4 +243,31 @@ body {
     border: 2px solid rgb(48, 49, 53);
     background-color: rgb(34, 35, 39);
   }
+
+  canvas {
+    height: 100%;
+  }
+
+  .container-chart {
+    position: static;
+  }
+}
+
+#fullScreenBtn {
+  background-color: rgb(34, 35, 39);
+  color: rgb(170, 170, 170);
+  border: none;
+  position: fixed;
+  width: 3rem;
+  height: 3rem;
+  bottom: 0;
+  left: 0;
+  margin: .5rem;
+  border-radius: .5rem;
+  border: 2px solid rgb(48, 49, 53);
+}
+
+#fullScreenBtn:hover {
+  background-color: rgb(57, 58, 63);
+  color: rgb(251, 251, 251);
 }

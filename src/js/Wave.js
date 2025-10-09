@@ -1,6 +1,9 @@
 
 // --- Clase Onda ---
 class Wave {
+  static MAGNITUDE = 5;
+  static PULSE_DURATION = 5;
+
   // ecuacion empíric (km)
   static DISTANCE_MAX(richter) {
     return 1.8693 * Math.exp(0.7076 * richter); // km
@@ -19,24 +22,26 @@ class Wave {
     return 1 - (Math.pow(-2 * t + 2, 3) / 2);
   }
 
-  is_out_hitbox() {
-    return this.radius >= this.lifeRadiusPx
-      || this.velocity <= 0
-      && this.elapsed >= this.travelDuration;
-  }
+  static NOISE_ENVELOPE(tNorm) {
+    // curva con subida y bajada suave
+    // tNorm: [0..1] del tiempo de vida del ruido
+    const rise = 0.05;
+    const fall = 0.8;
 
-  // amplitud maxima 
-  PGD() {
-    if (!this.signal.length) return 0;
-    return Math.max(...this.signal.map(s => Math.abs(s.amp)));
-  }
-  // velocidad en km/s (convertir px/s -> km/s)
-  PGV() {
-    return this._velocityPxPerS / this.simulator.kmToPx;
-  }
-  // aceleración en km/s^2
-  PGA() {
-    return this._accelPxPerS2 / this.simulator.kmToPx;
+    // sube suavemente (ease-in)
+    if (tNorm < rise) {
+      const x = tNorm / rise;
+      return x * x * (3 - 2 * x); // cubic in-out
+    }
+
+    // baja suavemente (ease-out)
+    if (tNorm > fall) {
+      const x = (1 - tNorm) / (1 - fall);
+      return x * x * (3 - 2 * x);
+    }
+
+    // zona media estable
+    return 1;
   }
 
   /**
@@ -49,20 +54,15 @@ class Wave {
     this.x = x;
     this.y = y;
 
-    // Magnitud (input usuario) y pulseDuration (input usuario)
-    this.magnitude = parseFloat(simulator.element_magnitude.value);
-
-    this.pulseDuration = parseFloat(simulator.element_duration.value);
-
     // --- Distancia total y travel duration por ecuaciones empíricas ---
-    this.totalDistanceKm = Wave.DISTANCE_MAX(this.magnitude); // km
-    this.travelDuration = Wave.DURATION_MAX(this.magnitude);  // s
+    this.totalDistanceKm = Wave.DISTANCE_MAX(Wave.MAGNITUDE); // km
+    this.travelDuration = Wave.DURATION_MAX(Wave.MAGNITUDE);  // s
 
     // conversión km -> px (simulator.kmToPx = px / km)
     this.totalRadiusPx = this.totalDistanceKm * this.simulator.kmToPx;
 
     // max visible radius en canvas (solo condicional visual)
-    this.maxRadiusPx = maxRadio(x, y, simulator.width, simulator.height, this.pulseDuration / 2);
+    this.maxRadiusPx = maxRadio(x, y, simulator.width, simulator.height, Wave.PULSE_DURATION / 2);
     this.lifeRadiusPx = Math.min(this.maxRadiusPx, this.totalRadiusPx);
 
     // elapsed time
@@ -72,17 +72,17 @@ class Wave {
     this.radius = 0;
 
     // thickness (grosor espacial) -> aproximamos como fracción de la distancia total:
-    // la porción del total que corresponde a pulseDuration sobre travelDuration
-    // thicknessPx = totalRadiusPx * (pulseDuration / travelDuration)
+    // la porción del total que corresponde a PULSE_DURATION sobre travelDuration
+    // thicknessPx = totalRadiusPx * (PULSE_DURATION / travelDuration)
     const safeT = Math.max(this.travelDuration, 1e-6);
-    this.thicknessPx = Math.max(1, this.totalRadiusPx * (this.pulseDuration / safeT));
+    this.thicknessPx = Math.max(1, this.totalRadiusPx * (Wave.PULSE_DURATION / safeT));
     this.offset = this.thicknessPx / 2;
 
     // visual
     this.alpha = 0.8;
 
     // ruido / sismograma
-    this.amplitudeMax = Math.pow(10, this.magnitude / 2); // escala (puedes ajustar)
+    this.amplitudeMax = Math.pow(10, Wave.MAGNITUDE / 2); // escala (puedes ajustar)
     this.signal = [];
 
     // para calcular derivadas numéricas
@@ -94,6 +94,56 @@ class Wave {
     // stats
     this.peakVelocityPx = 0;
     this.peakAccelPx = 0;
+
+    this.__scan();
+  }
+  // amplitud maxima 
+  get PGD() {
+    if (!this.signal.length) return 0;
+    return Math.max(...this.signal.map(s => Math.abs(s.amp)));
+  }
+  // velocidad en km/s (convertir px/s -> km/s)
+  get PGV() {
+    return this._velocityPxPerS / this.simulator.kmToPx;
+  }
+  // aceleración en km/s^2
+  get PGA() {
+    return this._accelPxPerS2 / this.simulator.kmToPx;
+  }
+
+  get is_off_the_map() {
+    return this.radius >= this.lifeRadiusPx
+      || this.velocity <= 0
+      && this.elapsed >= this.travelDuration;
+  }
+
+
+
+  __scan() {
+    /** @type {Map<DetectorNodes, number>} */
+    this.map = new Map;
+    this.simulator.nodes.forEach((node) => {
+      const dist = distance(this.x, this.y, node.x, node.y);
+      // dentro del sismo
+      if (dist < this.totalRadiusPx)
+        this.map.set(node, dist);
+    })
+  }
+
+  collision(node) {
+    let dist = this.map.get(node);
+    if (!dist) return false;
+
+    // sismo circulo
+    if (this.radius < this.thicknessPx) {
+      if (dist < this.radius)
+        return true;
+    }
+    // sismo anillo
+    else {
+      if (this.radius - this.thicknessPx <= dist && dist <= this.radius)
+        return true;
+    }
   }
 
   update(dt) {
@@ -133,7 +183,10 @@ class Wave {
 
     // generar ruido
     if (this.radius < this.thicknessPx) {
-      const sample = (Math.random() - 0.5) * this.amplitudeMax;
+      let tNoise = (this.radius / this.thicknessPx);
+
+      let env = Wave.NOISE_ENVELOPE(Math.min(tNoise, 1));
+      let sample = (Math.random() - 0.5) * this.amplitudeMax * env;
       this.signal.push({ t: this.elapsed, amp: sample });
     }
   }
@@ -153,7 +206,7 @@ class Wave {
     if (this.radius <= 0) return;
 
     if (this.radius < this.thicknessPx) {
-      // fase sólida: disco relleno
+      // fase sólida
       ctx.beginPath();
       ctx.arc(this.x, this.y, this.radius, 0, Simulator.ANGLE_COMPLETE);
       ctx.fillStyle = color;
@@ -162,7 +215,7 @@ class Wave {
       ctx.lineWidth = 1;
       ctx.stroke();
     } else {
-      // fase anillo hueco (inner..outer)
+      // fase anillo
       ctx.beginPath();
       ctx.arc(this.x, this.y, this.radius - this.offset, 0, Simulator.ANGLE_COMPLETE);
       ctx.closePath();

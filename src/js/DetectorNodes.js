@@ -1,9 +1,11 @@
 // --- Clase Nodo ---
 
 class DetectorNodes {
-  static RADIUS = 3;
-  static HITBOX_RADIUS = 5;
+  static CURRECT_SELECT = null;
+  static RADIUS = 5;
+  static HITBOX_RADIUS = 10;
   static COLLECTION = [];
+  static ROOT_THREE = Math.sqrt(3);
 
   /**
    * @param {number} x 
@@ -25,42 +27,64 @@ class DetectorNodes {
     return foundNode;
   }
 
+  /**
+   * @param {Simulator} simulator 
+   * @param {number} q 
+   * @param {number} r 
+   * @returns 
+   */
+  static axis({ spacingPx, centerX, centerY }, q, r) {
+    let x = centerX + (spacingPx * ((q + r / 2)));
+    let y = centerY + (spacingPx * ((DetectorNodes.ROOT_THREE * r) / 2));
+    return [x, y];
+  }
+
   /** 
    * @type {EventListener<{
    *   'collision_before': [Node: DetectorNodes]
    *   'collision_after': [Node: DetectorNodes]
    * }>} 
    */
-  EVENTS = new EventListener();
+  static EVENTS = new EventListener();
 
   /** 
    * @param {Simulator} simulator 
    * @param {number} q 
    * @param {number} r 
+   * @param {number} x 
+   * @param {number} y 
    */
-  constructor(simulator, q, r) {
+  constructor(simulator, q, r, x, y) {
     this.simulator = simulator;
     this.q = q;
     this.r = r;
+    this.x = x;
+    this.y = y;
 
     /** @type {Map<string, DetectorNodes>} */
     this.neighbors = new Map;
 
     this.reset();
 
-    const centerX = this.simulator.width / 2;
-    const centerY = this.simulator.height / 2;
-
-    this.x = centerX + this.simulator.spacingPx * Math.sqrt(3) * (q + r / 2);
-    this.y = centerY + this.simulator.spacingPx * (3 / 2) * r;
-
     DetectorNodes.COLLECTION.push(this);
   }
 
+  setInfo() {
+    if (this.info?.span)
+      this.info.span.textContent
+        = `(${this.state.slice(0, 3)}) PGA: ${this.pga.toFixed(1)}, SEG: ${this.duration.toFixed(1)}, (${this.q}, ${this.r})`;
+  }
+
   reset() {
+    /** @type {{span: HTMLSpanElement}} */
+    this.info = {};
     /** @type {keyof NODE_STATES} */
     this.state = "sintiendo";
 
+    /** @type {number} */
+    this.stampTime = null;
+    /** @type {number} */
+    this.duration = 0;
     /** @type {number} */
     this.acceleration = 0;
     /** @type {number} */
@@ -72,48 +96,47 @@ class DetectorNodes {
     this.confirmation = [{ counter: 0, max: 6 }, { counter: 0, max: 12 }];
   }
 
-  /** @param {Wave} wave  */
-  checkWaveCollision(wave) {
-    const dist = distance(this.x, this.y, wave.x, wave.y);
-    const { radius, offset, pulseDuration: duration } = wave;
-
-    // --- Fase sólida (disco) ---
-    if (radius < duration) {
-      if (dist <= radius) {
-        return true;
-      }
-    }
-
-    // --- Fase hueca (anillo) ---
-    else if (radius - offset <= dist && dist <= radius + offset) {
-      return true;
+  checkWaveCollision() {
+    for (const wave of this.simulator.waves) {
+      if (wave.collision(this))
+        return wave;
     }
 
     return false;
   }
 
   update() {
-    // this.state = 'sintiendo';
+    let wave = this.checkWaveCollision();
 
-    for (const wave of this.simulator.waves) {
-      if (this.checkWaveCollision(wave)) {
-        this.EVENTS.emit('collision_before', this);
-        this.state = 'detectado';
-        this.pga = wave.PGA();
-        this.acceleration = Math.max(this.acceleration, this.pga);
+    if (wave) {
+      let emitCollision = this.state != 'detectado';
+      this.state = 'detectado';
 
-        if (this.firstNode) {
-          this.firstNode.confirm(this);
-        } else {
-          this.order = 1;
-        }
-
-        this.neighbors.forEach(node => node.listenWave(this));
-
-        this.EVENTS.emit('collision_after', this);
-        break; // se queda con el primer impacto detectado
+      if (emitCollision) {
+        DetectorNodes.EVENTS.emit('collision_before', this);
+        this.stampTime = Date.now();
       }
+
+      this.duration = (Date.now() - this.stampTime) / 1000;
+
+      this.pga = wave.PGA;
+      this.acceleration = Math.max(this.acceleration, this.pga);
+
+      if (this.firstNode) {
+        this.firstNode.confirm(this);
+      } else {
+        this.order = 1;
+      }
+
+      this.neighbors.forEach(node => node.listenWave(this));
+
+      if (emitCollision)
+        DetectorNodes.EVENTS.emit('collision_after', this);
     }
+    else
+      this.state = 'sintiendo';
+
+    this.setInfo();
   }
 
   /** @param {DetectorNodes} node  */
@@ -141,6 +164,7 @@ class DetectorNodes {
   draw() {
     let ctx = this.simulator.ctx;
 
+    /* Cuerpo */
     ctx.beginPath();
     ctx.arc(this.x, this.y, DetectorNodes.RADIUS, 0, Simulator.ANGLE_COMPLETE);
     ctx.fillStyle = NODE_STATES[this.state][0];
@@ -149,20 +173,56 @@ class DetectorNodes {
     ctx.lineWidth = 2;
     ctx.stroke();
 
-    ctx.fillStyle = "black";
-    ctx.font = "8px Arial";
+    /* Borde */
+    ctx.font = "12px Arial";
     ctx.textAlign = "center";
-    ctx.fillText(`(${this.q}: ${this.r})`, this.x, this.y + 12);
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = "white";
+    ctx.fillStyle = "black";
+    let text = `(${this.q}: ${this.r})`;
+    let posX = this.x;
+    let posY = this.y - 14;
+    ctx.strokeText(text, posX, posY); // dibuja el borde
+    ctx.fillText(text, posX, posY);   // dibuja el relleno
 
-    // Magnitud encima
-    if (this.acceleration !== null) {
-      ctx.fillStyle = "black";
-      ctx.font = "8px Arial";
-      ctx.textAlign = "center";
-      ctx.fillText((this.acceleration * 1000).toFixed(1), this.x, this.y - 12);
+    /* Seleccion */
+    if (DetectorNodes.CURRECT_SELECT == this) {
+      ctx.beginPath();
+      ctx.setLineDash([3, 2]);
+      ctx.arc(this.x, this.y, DetectorNodes.HITBOX_RADIUS, 0, Simulator.ANGLE_COMPLETE);
+      ctx.strokeStyle = `rgba(138, 0, 0, 1)`;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.setLineDash([]);
     }
   }
 }
+
+
+
+
+
+
+
+
+
+
+/**
+ * @param {number} w 
+ * @param {number} h 
+ */
+function hypotenuse(w, h) {
+  return Math.sqrt((w ** 2) + (h ** 2));
+}
+
+
+
+
+
+
+
+
+
 
 /**
  * @param {number} ax 
@@ -173,8 +233,17 @@ class DetectorNodes {
 function distance(ax, ay, bx, by) {
   let cx = bx - ax;
   let cy = by - ay;
-  return Math.sqrt((cx ** 2) + (cy ** 2));
+  return hypotenuse(cx, cy);
 }
+
+
+
+
+
+
+
+
+
 
 /**
  * @param {number[]} sensorTimes 
@@ -194,6 +263,14 @@ function estimateOrigin(sensorTimes) {
     timeDifferences: relativeTimes
   };
 }
+
+
+
+
+
+
+
+
 
 
 // --- Colores por estado [interior, borde] ---

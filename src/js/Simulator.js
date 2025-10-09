@@ -1,8 +1,18 @@
 // --- Clase Simulador ---
 
 class Simulator {
-  static SPEED = 0.7;
   static ANGLE_COMPLETE = Math.PI * 2;
+  static NODE_SPACING = 100;
+  static MAP_SCALE = 300;
+  static OFF_SET = 10;
+  static DIRS = [
+    ['OE', -1, 0],
+    ['NO', 0, -1],
+    ['NE', 1, -1],
+    ['ES', 1, 0],
+    ['SE', 0, 1],
+    ['SO', -1, 1]
+  ];
 
   /**
    * @type {EventListener<{
@@ -13,19 +23,11 @@ class Simulator {
   /** 
    * @param {HTMLImageElement} element_img 
    * @param {HTMLCanvasElement} element_mapCanvas 
-   * @param {HTMLInputElement} element_mapScale 
-   * @param {HTMLInputElement} element_nodeSpacing 
-   * @param {HTMLInputElement} element_magnitude 
-   * @param {HTMLInputElement} element_duration 
    * @param {HTMLInputElement} element_chartWave 
    */
-  constructor(element_img, element_mapCanvas, element_mapScale, element_nodeSpacing, element_magnitude, element_duration, element_chartWave) {
+  constructor(element_img, element_mapCanvas, element_chartWave) {
     this.element_img = element_img;
     this.element_mapCanvas = element_mapCanvas;
-    this.element_mapScale = element_mapScale;
-    this.element_nodeSpacing = element_nodeSpacing;
-    this.element_magnitude = element_magnitude;
-    this.element_duration = element_duration;
     this.element_chartWave = element_chartWave;
 
     this.ctx = element_mapCanvas.getContext("2d");
@@ -38,7 +40,6 @@ class Simulator {
     this.waves = new Set();
 
     this.lastTime = null;
-
 
     this.element_mapCanvas.addEventListener("mousedown", e => {
       e.preventDefault();
@@ -57,56 +58,48 @@ class Simulator {
   }
 
   applySettings() {
-    this.mapScale = parseFloat(this.element_mapScale.value); // km
-    this.nodeSpacing = parseFloat(this.element_nodeSpacing.value); // km
     this.waves = new Set();
 
-    const { width, height } = this.element_mapCanvas;
-    this.width = width;
-    this.height = height;
-    this.kmToPx = this.width / this.mapScale;
-    this.spacingPx = this.nodeSpacing * this.kmToPx;
+    this.width = this.element_mapCanvas.width;
+    this.height = this.element_mapCanvas.height;
     this.maxLength = Math.max(this.width, this.height);
-    this.diagonal = ((this.width ** 2) + (this.height ** 2)) ** 0.5;
-    this.radius = this.maxLength / this.spacingPx;
-
-    DetectorNodes.COLLECTION = [];
+    this.diagonal = hypotenuse(this.width, this.height);
+    this.centerX = this.width / 2;
+    this.centerY = this.height / 2;
 
     this.generateNodes();
-    this.linkNeighbors();
   }
 
   generateNodes() {
-    let radius = parseInt(this.radius);
+    DetectorNodes.COLLECTION = [];
     this.nodes = new Map;
-    
+
+    this.kmToPx = this.width / Simulator.MAP_SCALE;
+    this.spacingPx = Simulator.NODE_SPACING * this.kmToPx;
+    this.radius = Math.ceil(this.maxLength / this.spacingPx);
+
+    const { radius, width, height } = this;
+
     for (let q = -radius; q <= radius; q++) {
       for (let r = -radius; r <= radius; r++) {
-        const node = new DetectorNodes(this, q, r);
-        if (node.x >= 0 && node.x <= this.width &&
-          node.y >= 0 && node.y <= this.height)
 
-          this.nodes.set(`${node.q},${node.r}`, node);
+        let [x, y] = DetectorNodes.axis(this, q, r);
+        if (Simulator.OFF_SET <= x && x <= width - Simulator.OFF_SET
+          && Simulator.OFF_SET <= y && y <= height) {
+
+          let name = `${q},${r}`
+          let node = new DetectorNodes(this, q, r, x, y);
+          this.nodes.set(name, node);
+        }
       }
     }
-  }
-
-  linkNeighbors() {
-    const dirs = [
-      ['OE', -1, 0],
-      ['NO', 0, -1],
-      ['NE', 1, -1],
-      ['ES', 1, 0],
-      ['SE', 0, 1],
-      ['SO', -1, 1]
-    ];
 
     this.nodes.forEach(node => {
-      for (const [dir, dq, dr] of dirs) {
-        const key = `${node.q + dq},${node.r + dr}`;
-        if (this.nodes.has(key)) {
-          node.neighbors.set(dir, this.nodes.get(key));
-        }
+      for (const [dir, dq, dr] of Simulator.DIRS) {
+        let name = `${node.q + dq},${node.r + dr}`;
+
+        if (this.nodes.has(name))
+          node.neighbors.set(dir, this.nodes.get(name));
       }
     });
   }
@@ -142,14 +135,20 @@ class Simulator {
 
     if (!foundNode) return;
 
+    if (!DetectorNodes.CURRECT_SELECT)
+      return DetectorNodes.CURRECT_SELECT = foundNode;
 
+    if (DetectorNodes.CURRECT_SELECT == foundNode)
+      return DetectorNodes.CURRECT_SELECT = null
+
+    return DetectorNodes.CURRECT_SELECT = foundNode;
   }
 
   update(dt) {
     this.waves.forEach((wave) => {
       wave.update(dt);
 
-      if (wave.is_out_hitbox())
+      if (wave.is_off_the_map)
         this.waves.delete(wave);
     });
 
@@ -165,15 +164,20 @@ class Simulator {
     this.nodes.forEach(node => node.draw());
   }
 
-  loop = (timestamp) => {
-    if (!this.lastTime)
+  run() {
+    let loop = (timestamp) => {
+      if (!this.lastTime)
+        this.lastTime = timestamp;
+
+      const dt = (timestamp - this.lastTime) / 1000;
       this.lastTime = timestamp;
-    const dt = (timestamp - this.lastTime) / 1000;
-    this.lastTime = timestamp;
 
-    this.update(dt);
-    this.draw();
+      this.update(dt);
+      this.draw();
 
-    requestAnimationFrame(this.loop);
+      requestAnimationFrame(loop);
+    }
+
+    loop();
   }
 }

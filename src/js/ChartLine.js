@@ -1,6 +1,8 @@
 // --- Clase ChartLine ---
 
 class ChartLine {
+  static MIN_X = 60;
+
   static COLORS = [
     'orange', 'purple', 'red', 'blue', 'green',
     'brown', 'teal', 'pink', 'gray', 'cyan'
