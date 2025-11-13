@@ -4,6 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <title>Simulación Sísmica</title>
+  <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
   <link rel="stylesheet" href="/src/css/style.css">
 </head>
 
@@ -47,56 +48,74 @@
 
         <div class="row">
           <div class="input-box">
-            <label>
-              Separación entre nodos (km)
-              <input type="number" id="nodeSpacing" value="20" step="0.1">
-            </label>
+            <label> Separación entre nodos (km) </label>
+            <input type="number" id="nodeSpacing" value="20" step="0.1">
           </div>
         </div>
 
       </div>
+
+      <div class="br-solid"></div>
 
       <div class="controls">
         <h3>Configuración del Sismo</h3>
 
         <div class="row">
           <div class="input-box">
-            <label>
-              Magnitud (Richter)
-              <input type="number" id="magnitude" value="5" step="0.1">
-            </label>
+            <label> Magnitud (Richter) </label>
+            <input type="number" id="magnitude" value="5" step="0.1">
           </div>
           <div class="input-box">
-            <label>
-              Duración sísmica (s)
-              <input type="number" id="duration" value="10" step="0.1">
-            </label>
+            <label> Duración sísmica (s) </label>
+            <input type="number" id="duration" value="10" step="0.1">
           </div>
         </div>
         <span id="predictWave"></span>
       </div>
 
-      <div class="controls" style="width: 100%;">
-        <h3>Secuencia de Nodos</h3>
-        <span id="infoWave"> </span>
-      </div>
+      <div class="br-solid"></div>
 
-      <div class="controls" style="width: 100%;">
+      <div class="controls row" style="width: 100%">
         <h3>Secuencia de Nodos</h3>
-        <span id="infoModule"> </span>
-      </div>
 
-      <div class="controls" style="width: 100%;">
-        <h3>Secuencia de Nodos</h3>
-        <div id="selectorModule" class="col" style="gap:.5rem">
+        <div class="row" style="height: 30rem;">
+          <div id="selectorModule" class="col" style="gap:.3rem">
+          </div>
+
+          <div class="col" style="justify-content: space-between; align-items: center;">
+              <div class="info col">
+                <span>Estado: <span id="info-node-1"></span></span>
+                <span>Aceleracion: <span id="info-node-2"></span></span>
+                <span>Velocidad: <span id="info-node-3"></span></span>
+                <span>Duración: <span id="info-node-4"></span></span>
+                <span>Order: <span id="info-node-5"></span></span>
+              </div>
+              <div class="col cords-hex">
+                <div class="row up">
+                  <button id="NO" class="node-selector" disabled>NO</button>
+                  <button id="NE" class="node-selector" disabled>NE</button>
+                </div>
+                <div class="row sides">
+                  <button id="OE" class="node-selector" disabled>OE</button>
+                  <button id="node-cord" class="node-selected"></button>
+                  <button id="ES" class="node-selector" disabled>ES</button>
+                </div>
+                <div class="row bottom">
+                  <button id="SO" class="node-selector" disabled>SO</button>
+                  <button id="SE" class="node-selector" disabled>SE</button>
+                </div>
+              </div>
+              <canvas id="chartNode" width="300" height="100"></canvas>
+            </div>
         </div>
       </div>
+
     </div>
   </div>
 
-  <button id="fullScreenBtn" style="font-size: 2rem;"><span>
-      <>
-    </span></button>
+  <button id="fullScreenBtn" style="font-size: 2rem;">
+    <span class="f-center"><i class='bx bx-fullscreen'></i></span>
+  </button>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="/src/libs/EventListener.js"></script>

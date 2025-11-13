@@ -20,6 +20,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const element_clearBtn = document.getElementById("clearCharts");
   const element_predictWave = document.getElementById("predictWave");
   const element_selectorModule = document.getElementById("selectorModule");
+  const elements_nodeCord = document.getElementById("node-cord");
+  const elements_infoNode_dirs = document.querySelectorAll(".cords-hex .node-selector");
+  const elements_infoNode1 = document.getElementById("info-node-1");
+  const elements_infoNode2 = document.getElementById("info-node-2");
+  const elements_infoNode3 = document.getElementById("info-node-3");
+  const elements_infoNode4 = document.getElementById("info-node-4");
+  const elements_infoNode5 = document.getElementById("info-node-5");
 
 
 
@@ -98,7 +105,7 @@ document.addEventListener('DOMContentLoaded', () => {
   element_fullScreenBtn.addEventListener('click', () => {
     let contains = element_container.classList.contains('fullscreen');
     element_container.classList.toggle('fullscreen', !contains);
-    localStorage.setItem(CACHE_FULL_SCREEN, contains);
+    localStorage.setItem(CACHE_FULL_SCREEN, !contains);
   });
   /* INPUTS */
   elements_scale.forEach(el => el.addEventListener('click', () => {
@@ -143,16 +150,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
   let magnitudeChange = () => {
-    let distanceMax = Wave.DISTANCE_MAX(Wave.MAGNITUDE).toFixed(2);
-    let durationMax = Wave.DURATION_MAX(Wave.MAGNITUDE).toFixed(2);
+    let distanceMax = Wave.DISTANCE_MAX(Wave.MAGNITUDE);
+    let durationMax = Wave.DURATION_MAX(Wave.MAGNITUDE);
 
     element_predictWave.innerText
-      = `Distancia maxima: ${distanceMax} km`
-      + `\nDuracion: ${durationMax} s`;
+      = `Distancia maxima: ${distanceMax.toFixed(2)} km`
+      + `\nDuracion: ${durationMax.toFixed(2)} s`;
 
-    let mapScale = simulator.mapScale;
-    let whereAlert = distanceMax > mapScale / 2;
-    let whereWarn = whereAlert && distanceMax > mapScale;
+    let { MAP_SCALE } = Simulator;
+
+    let whereAlert = distanceMax > MAP_SCALE / 2;
+    let whereWarn = whereAlert && distanceMax > MAP_SCALE;
 
     element_mapCanvas.className = '';
     element_predictWave.className = '';
@@ -166,6 +174,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
   element_magnitude.addEventListener('input', magnitudeChange);
+  elements_scale.forEach(el => el.addEventListener('click', () => magnitudeChange()));
   magnitudeChange();
 
 
@@ -178,22 +187,85 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
   DetectorNodes.EVENTS.on('collision_before', (node) => {
-    let span = document.createElement('span');
-    span.innerText = `Nodo (${node.q}, ${node.r})`;
 
-    let buttonSelect = document.createElement('button');
-    buttonSelect.innerText = 'INF';
+    let data = document.createElement('span');
+    data.innerText = `(${node.q}, ${node.r})`;
 
-    let cont = document.createElement('div');
-    cont.className = 'info-box';
-    cont.append(buttonSelect, span);
+    let selector = document.createElement('button');
+    selector.className = 'node-selector';
+    selector.innerText = `NODO`;
 
-    element_selectorModule.append(cont);
+    let content = document.createElement('div');
+    content.className = 'info-box';
+    content.append(selector, data);
 
-    buttonSelect.addEventListener('click', () => {
+    selector.addEventListener('click', () => {
       DetectorNodes.CURRECT_SELECT = node;
+      DetectorNodes.EVENTS.emitAsync('selected_node', node);
     });
 
-    node.info.span = span;
+    if (!element_selectorModule.childNodes)
+      return element_selectorModule.append(content);
+
+    let br = document.createElement('div');
+    br.className = 'br-dashed';
+    element_selectorModule.append(content, br);
+  });
+
+
+
+
+
+
+
+
+
+
+  /** @type {Map<string, {el:HTMLButtonElement, self: DetectorNodes?}>} */
+  let infoNode_dirs = new Map;
+  /** @type {()=>void} */
+  let call_temp;
+
+  let selected_node = DetectorNodes.EVENTS
+    .on('selected_node', node => {
+      infoNode_dirs.forEach((data, dir) => {
+        if (!node.neighbors.has(dir)) {
+          data.self = null;
+          return data.el.disabled = true;
+        }
+        data.el.disabled = false;
+        data.self = node.neighbors.get(dir);
+      });
+
+      elements_nodeCord.textContent = node.name;
+      node.events.off('update', call_temp);
+      call_temp = () => {
+        elements_infoNode1.innerText = node.state;
+        elements_infoNode2.innerText = node.accelerationMax.toFixed();
+        elements_infoNode3.innerText = node.velocityMax.toFixed();
+        elements_infoNode4.innerText = node.elapsed.toFixed();
+        elements_infoNode5.innerText = node.elapsed.toFixed();
+      }
+      node.events.on('update', call_temp);
+    });
+
+  elements_infoNode_dirs.forEach(el => {
+    let data = { el, self: null }
+    infoNode_dirs.set(el.id, data);
+    el.addEventListener('click', () => {
+      DetectorNodes.SELECT_NODE(data.self);
+
+      if (data.self) selected_node(data.self);
+    })
+  });
+
+
+  DetectorNodes.EVENTS.on('diselected_node', node => {
+    infoNode_dirs.forEach((data, dir) => {
+      data.self = null;
+      return data.el.disabled = true;
+    })
+    elements_nodeCord.textContent = ''
+    node.events.off('update', call_temp);
   });
 })

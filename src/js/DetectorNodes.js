@@ -1,21 +1,60 @@
+/** @typedef {'OE'|'NO'|'NE'|'ES'|'SE'|'SO'} DIRS  */
+
 // --- Clase Nodo ---
 
 class DetectorNodes {
+
+  /** 
+   * @type {EventListener<{
+   *   'selected_node': [Node: DetectorNodes]
+   *   'diselected_node': [Node: DetectorNodes]
+   *   'collision_before': [Node: DetectorNodes]
+   *   'collision_after': [Node: DetectorNodes]
+   * }>} 
+   */
+  static EVENTS = new EventListener();
+  /** @type {[DIRS, number, number][]} */
+  static DIRS = [
+    ['NO', 0, -1],
+    ['NE', 1, -1],
+    ['OE', -1, 0],
+    ['ES', 1, 0],
+    ['SO', -1, 1],
+    ['SE', 0, 1]
+  ];
+  /** @type {Map<string, DetectorNodes>} */
+  static COLLECTION = new Map;
+  /** @type {DetectorNodes?} */
   static CURRECT_SELECT = null;
   static RADIUS = 5;
   static HITBOX_RADIUS = 10;
-  static COLLECTION = [];
   static ROOT_THREE = Math.sqrt(3);
+
+  /**
+   * @param {DetectorNodes} node 
+   */
+  static SELECT_NODE(node) {
+    DetectorNodes.EVENTS.emitAsync('selected_node', node);
+    DetectorNodes.CURRECT_SELECT = node;
+  }
+
+  /**
+   * @param {DetectorNodes} node 
+   */
+  static DISELECT_NODE() {
+    if (DetectorNodes.CURRECT_SELECT)
+      DetectorNodes.EVENTS.emitAsync('diselected_node', DetectorNodes.CURRECT_SELECT);
+    DetectorNodes.CURRECT_SELECT = null;
+  }
 
   /**
    * @param {number} x 
    * @param {number} y 
-   * @returns {DetectorNodes}
    */
-  static FIND(x, y) {
+  static FIND_NODE(x, y) {
     let foundNode = null;
 
-    for (let node of DetectorNodes.COLLECTION) {
+    for (let [_, node] of DetectorNodes.COLLECTION) {
       const dist = distance(x, y, node.x, node.y);
 
       if (dist <= DetectorNodes.HITBOX_RADIUS) {
@@ -40,14 +79,6 @@ class DetectorNodes {
   }
 
   /** 
-   * @type {EventListener<{
-   *   'collision_before': [Node: DetectorNodes]
-   *   'collision_after': [Node: DetectorNodes]
-   * }>} 
-   */
-  static EVENTS = new EventListener();
-
-  /** 
    * @param {Simulator} simulator 
    * @param {number} q 
    * @param {number} r 
@@ -56,6 +87,7 @@ class DetectorNodes {
    */
   constructor(simulator, q, r, x, y) {
     this.simulator = simulator;
+    this.name = `${q},${r}`;
     this.q = q;
     this.r = r;
     this.x = x;
@@ -64,40 +96,49 @@ class DetectorNodes {
     /** @type {Map<string, DetectorNodes>} */
     this.neighbors = new Map;
 
+
+    /**
+     * @type {EventListener<{
+     *   'update': []
+     * }>}
+     */
+    this.events = new EventListener();
     this.reset();
-
-    DetectorNodes.COLLECTION.push(this);
-  }
-
-  setInfo() {
-    if (this.info?.span)
-      this.info.span.textContent
-        = `(${this.state.slice(0, 3)}) PGA: ${this.pga.toFixed(1)}, SEG: ${this.duration.toFixed(1)}, (${this.q}, ${this.r})`;
   }
 
   reset() {
-    /** @type {{span: HTMLSpanElement}} */
-    this.info = {};
     /** @type {keyof NODE_STATES} */
     this.state = "sintiendo";
 
     /** @type {number} */
-    this.stampTime = null;
-    /** @type {number} */
     this.duration = 0;
     /** @type {number} */
-    this.acceleration = 0;
-    /** @type {number} */
-    this.acceleration = 0;
     this.order = 0;
-    /** @type {DetectorNodes?} */
-    this.firstNode = null;
+    /** @type {number} */
+    this.accelerationMax = 0;
+    /** @type {number} */
+    this.velocityMax = 0;
+    /** @type {number} */
+    this.elapsed = 0;
 
-    this.confirmation = [{ counter: 0, max: 6 }, { counter: 0, max: 12 }];
+    /** @type {{ x: number, y: number }[]} */
+    this.sampleAcceleration = [];
+    /** @type {{ x: number, y: number }[]} */
+    this.sampleVelocity = [];
+  }
+
+  linked_neighbors() {
+    let { q, r, neighbors } = this;
+    for (let [dir, dq, dr] of DetectorNodes.DIRS) {
+      let name = `${q + dq},${r + dr}`;
+
+      if (DetectorNodes.COLLECTION.has(name))
+        neighbors.set(dir, DetectorNodes.COLLECTION.get(name));
+    }
   }
 
   checkWaveCollision() {
-    for (const wave of this.simulator.waves) {
+    for (const wave of Wave.COLLECTION) {
       if (wave.collision(this))
         return wave;
     }
@@ -105,59 +146,46 @@ class DetectorNodes {
     return false;
   }
 
-  update() {
+  update(dt) {
     let wave = this.checkWaveCollision();
 
     if (wave) {
+      this.elapsed += dt;
+
+      let { PGA, PGV } = wave;
+
+      this.accelerationMax = Math.max(this.accelerationMax, PGA);
+      this.velocityMax = Math.max(this.velocityMax, PGV);
+
+      this.sampleAcceleration.push({ x: this.elapsed, y: PGA });
+      this.sampleVelocity.push({ x: this.elapsed, y: PGV });
+
       let emitCollision = this.state != 'detectado';
       this.state = 'detectado';
 
       if (emitCollision) {
-        DetectorNodes.EVENTS.emit('collision_before', this);
-        this.stampTime = Date.now();
+        DetectorNodes.EVENTS.emitAsync('collision_before', this);
+        // emite a los vecinos para avisarles que se detecto 
+        // los vecino se establecen en estado de 'escuchando'
+        this.emitRadio(); // faltan parametros
       }
 
-      this.duration = (Date.now() - this.stampTime) / 1000;
 
-      this.pga = wave.PGA;
-      this.acceleration = Math.max(this.acceleration, this.pga);
-
-      if (this.firstNode) {
-        this.firstNode.confirm(this);
-      } else {
-        this.order = 1;
-      }
-
-      this.neighbors.forEach(node => node.listenWave(this));
 
       if (emitCollision)
-        DetectorNodes.EVENTS.emit('collision_after', this);
+        DetectorNodes.EVENTS.emitAsync('collision_after', this);
     }
-    else
-      this.state = 'sintiendo';
 
-    this.setInfo();
+    this.events.emitAsync('update')
   }
 
-  /** @param {DetectorNodes} node  */
-  listenWave(node) {
-    if (this.order) return;
-
-    this.state = 'escuchando';
-    this.order = node.order + 1;
-
-    if (1 < node.order)
-      this.firstNode = node.firstNode;
-    else
-      this.firstNode = node;
+  emitRadio(HEADER, SOURCE_ID, TARGET_ID, DATA, CRC) {
+    this.neighbors.forEach(neighborNode => {
+      neighborNode.listenerRadio(HEADER, SOURCE_ID, TARGET_ID, DATA, CRC)
+    });
   }
 
-  /** @param {DetectorNodes} node  */
-  confirm(node) {
-    if (node.order < 2 || 3 < node.order) return
-
-    let order = node.order - 2;
-    let { counter, max } = this.confirmation[order];
+  listenerRadio(HEADER, SOURCE_ID, TARGET_ID, DATA, CRC) {
 
   }
 

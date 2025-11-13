@@ -50,8 +50,8 @@ class ChartLine {
   }
 
   update() {
-    [...this.simulator.waves].forEach((wave, idx) => {
-      if (!this.chart.data.datasets[idx]) {
+    [...Wave.COLLECTION].forEach((wave, idx) => {
+      if (!this.chart.data.datasets[idx])
         this.chart.data.datasets[idx] = {
           label: `Wave ${idx + 1}`,
           data: [],
@@ -59,16 +59,12 @@ class ChartLine {
           borderWidth: 1,
           fill: false
         };
-      }
 
-      this.chart.data.datasets[idx].data = wave.signal.map(s => ({
-        x: s.t,
-        y: s.amp
-      }));
+      this.chart.data.datasets[idx].data = wave.signal;
     });
 
     this.chart.data.datasets = this.chart.data.datasets
-      .slice(0, this.simulator.waves.length);
+      .slice(0, Wave.COLLECTION.size);
 
     this.chart.update();
   }

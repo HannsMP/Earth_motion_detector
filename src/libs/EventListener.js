@@ -99,8 +99,10 @@ class EventListener {
   /**
    * @template {keyof D} O
    * @param {O} eventName 
-   * @param {(...args: D[O])=>(Promise<void> | void)} eventFun 
+   * @template {(...args: D[O])=>(Promise<void> | void)} F
+   * @param {F} eventFun 
    * @param {{ once: false, persistence: false}} option 
+   * @returns {F}
    */
   on(eventName, eventFun, option = {}) {
     let { once = false, persistence = false } = option;
@@ -111,15 +113,17 @@ class EventListener {
 
       if (eventMap?.processAwait) {
         let process = eventMap;
-        return process.processAwait = process.processAwait
+        process.processAwait = process.processAwait
           .then(async () => await eventFun(...process.processData));
+        return eventFun;
       }
 
       eventMap = new Map;
       this.#data.set(eventName, eventMap)
     }
 
-    eventMap.set(eventFun, { once, persistence })
+    eventMap.set(eventFun, { once, persistence });
+    return eventFun;
   }
 
   /** 

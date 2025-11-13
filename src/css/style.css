@@ -1,5 +1,5 @@
 * {
-  box-sizing: content-box;
+  box-sizing: border-box;
   font-family: "Fira Code", "Consolas", "Lucida Console", "Courier New", monospace;
 }
 
@@ -30,8 +30,8 @@ canvas {
 
 button {
   width: 15rem;
-  height: 1rem;
-  padding: .3rem;
+  height: 2rem;
+  padding: .2rem;
   border-radius: .4rem;
 }
 
@@ -45,6 +45,22 @@ button {
   display: flex;
   flex-direction: column;
   gap: 1rem;
+}
+
+.f-center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.br-solid {
+  width: 90%;
+  border-bottom: 1px solid grey;
+}
+
+.br-dashed {
+  width: 90%;
+  border-bottom: 1px dashed grey;
 }
 
 .container {
@@ -75,14 +91,14 @@ button {
 
       .input-box {
         display: flex;
-        flex-direction: row;
+        flex-direction: column;
         gap: .5rem;
       }
 
       input[type=number] {
         text-align: center;
         width: 12rem;
-        height: 1rem;
+        height: 2rem;
         background-color: rgba(0, 0, 0, .1);
         outline: none;
         border: none;
@@ -111,8 +127,9 @@ button {
 
     #selectorModule {
       background-color: rgb(251, 251, 251);
-      width: 26rem;
-      height: 15rem;
+      width: 10rem;
+      height: 100%;
+      max-height: 100%;
       gap: 1rem;
       padding: .5rem;
       border-radius: .5rem;
@@ -121,28 +138,65 @@ button {
       .info-box {
         display: flex;
         flex-direction: row;
-        /* justify-content: space-between; */
+        align-items: center;
         padding-bottom: .2rem;
-        border-bottom: 1px dashed rgb(34, 35, 39);
 
         * {
           font-size: 13px;
         }
 
-        button {
-          background-color: rgb(188, 255, 255);
-          width: 2rem;
-          height: 1rem;
-          border-width: 1px;
-          padding: .1rem;
-          margin-right: .5rem;
-        }
-
-        button:hover {
-          border-color: transparent;
-        }
       }
     }
+
+    .node-selector {
+      background-color: rgb(188, 255, 255);
+      width: 3rem;
+      height: 1.7rem;
+      border-width: 1px;
+      padding: .1rem;
+      margin-right: .5rem;
+    }
+
+    .node-selector:hover {
+      border-color: transparent;
+    }
+
+    .info {
+      width: 100%;
+    }
+
+    .cords-hex {
+      gap: .1rem;
+      width: min-content;
+      height: min-content;
+
+      .node-selected,
+      .node-selector {
+        height: 2.5rem;
+        width: 2.5rem;
+        border-radius: 50%;
+        margin-right: 0;
+      }
+
+      .node-selected {
+        font-size: .8rem;
+        background-color: rgb(255, 255, 255);
+        border-width: 1px;
+        padding: .1rem;
+        width: 2.5rem;
+      }
+
+      .up,
+      .bottom {
+        justify-content: center;
+        gap: .5rem;
+      }
+
+      .sides {
+        gap: .5rem;
+      }
+    }
+
   }
 
   .alert {

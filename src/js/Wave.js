@@ -1,6 +1,8 @@
 
 // --- Clase Onda ---
 class Wave {
+  /** @type {Set<Wave>} */
+  static COLLECTION = new Set;
   static MAGNITUDE = 5;
   static PULSE_DURATION = 5;
 
@@ -83,6 +85,7 @@ class Wave {
 
     // ruido / sismograma
     this.amplitudeMax = Math.pow(10, Wave.MAGNITUDE / 2); // escala (puedes ajustar)
+    /** @type {{ x: number, y: number }[]} */
     this.signal = [];
 
     // para calcular derivadas numéricas
@@ -122,7 +125,7 @@ class Wave {
   __scan() {
     /** @type {Map<DetectorNodes, number>} */
     this.map = new Map;
-    this.simulator.nodes.forEach((node) => {
+    DetectorNodes.COLLECTION.forEach((node) => {
       const dist = distance(this.x, this.y, node.x, node.y);
       // dentro del sismo
       if (dist < this.totalRadiusPx)
@@ -187,7 +190,7 @@ class Wave {
 
       let env = Wave.NOISE_ENVELOPE(Math.min(tNoise, 1));
       let sample = (Math.random() - 0.5) * this.amplitudeMax * env;
-      this.signal.push({ t: this.elapsed, amp: sample });
+      this.signal.push({ x: this.elapsed, y: sample });
     }
   }
 
