@@ -177,7 +177,7 @@ class DetectorNodes {
 
   checkWaveCollision() {
     for (const wave of Wave.COLLECTION) {
-      if (wave.collision(this))
+      if (wave.node_in_collision(this))
         return wave;
     }
 
@@ -234,16 +234,16 @@ class DetectorNodes {
     ctx.stroke();
 
     /* Borde */
-    ctx.font = "12px Arial";
-    ctx.textAlign = "center";
-    ctx.lineWidth = 2;
-    ctx.strokeStyle = "white";
-    ctx.fillStyle = "black";
-    let text = `(${this.q}: ${this.r})`;
-    let posX = this.x;
-    let posY = this.y - 14;
-    ctx.strokeText(text, posX, posY); // dibuja el borde
-    ctx.fillText(text, posX, posY);   // dibuja el relleno
+    // ctx.font = "12px Arial";
+    // ctx.textAlign = "center";
+    // ctx.lineWidth = 2;
+    // ctx.strokeStyle = "white";
+    // ctx.fillStyle = "black";
+    // let text = `(${this.q}: ${this.r})`;
+    // let posX = this.x;
+    // let posY = this.y - 14;
+    // ctx.strokeText(text, posX, posY); // dibuja el borde
+    // ctx.fillText(text, posX, posY);   // dibuja el relleno
 
     /* Seleccion */
     if (DetectorNodes.CURRECT_SELECT == this) {
@@ -333,9 +333,9 @@ function estimateOrigin(sensorTimes) {
 
 
 
-// --- Colores por estado [interior, borde] ---
+// --- Colores por estado [relleno, borde] ---
 const NODE_STATES = {
-  'sintiendo': ["rgba(0, 0, 0, 0.7)", "rgba(0, 0, 0, 0.7)"],
+  'sintiendo': ["rgba(0,100,0,0.9)", "rgba(59, 59, 59, 0.7)"],
   'escuchando': ["rgba(54, 54, 54, 0.7)", "rgba(255, 200, 0, 0.8)"],
   'alerta': ["rgba(255, 0, 0, 0.7)", "rgba(255, 80, 0, 0.8)"],
   'detectado': ["rgba(255, 0, 0, 0.7)", "rgba(255, 0, 0, 0.86)"]

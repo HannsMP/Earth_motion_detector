@@ -135,6 +135,7 @@ class Simulator {
     if (Wave.COLLECTION.size)
       this.chart_waves.update();
 
+    Population.COLLECTION.forEach(p => p.update(dt));
     DetectorNodes.COLLECTION.forEach(node => node.update(dt));
   }
 
@@ -142,11 +143,7 @@ class Simulator {
     this.ctx.drawImage(this.element_img, 0, 0, Simulator.WIDTH, Simulator.HEIGHT);
     Wave.COLLECTION.forEach(wave => wave.draw());
 
-    // Dibujar poblaciones (si existen)
-    if (typeof Population !== 'undefined' && Population.COLLECTION) {
-      Population.COLLECTION.forEach(p => p.draw());
-    }
-
+    Population.COLLECTION.forEach(p => p.draw());
     DetectorNodes.COLLECTION.forEach(node => node.draw());
   }
 

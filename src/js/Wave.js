@@ -64,7 +64,6 @@ class Wave {
     this.simulator = simulator;
     this.x = x;
     this.y = y;
-    this.triangulation = new Triangulation(simulator);
 
     // --- Distancia total y travel duration por ecuaciones empíricas ---
     this.totalDistanceKm = Wave.DISTANCE_MAX(Wave.MAGNITUDE); // km
@@ -109,6 +108,7 @@ class Wave {
     this.peakAccelPx = 0;
 
     this.__scan();
+    this.triangulation = new Triangulation(simulator, this);
   }
 
 
@@ -143,12 +143,22 @@ class Wave {
 
   __scan() {
     /** @type {Map<DetectorNodes, number>} */
-    this.map = new Map;
+    this.nodeMap = new Map;
     DetectorNodes.COLLECTION.forEach((node) => {
       const dist = distance(this.x, this.y, node.x, node.y);
       // dentro del sismo
       if (dist < this.totalRadiusPx)
-        this.map.set(node, dist);
+        this.nodeMap.set(node, dist);
+    })
+
+
+    /** @type {Map<Population, number>} */
+    this.populationMap = new Map;
+    Population.COLLECTION.forEach((population) => {
+      const dist = distance(this.x, this.y, population.x, population.y);
+      // dentro del sismo
+      if (dist < this.totalRadiusPx)
+        this.populationMap.set(population, dist);
     })
   }
 
@@ -156,8 +166,34 @@ class Wave {
 
 
 
-  collision(node) {
-    let dist = this.map.get(node);
+  /**
+   * @param {DetectorNodes} node 
+   */
+  node_in_collision(node) {
+    let dist = this.nodeMap.get(node);
+    if (!dist) return false;
+
+    // sismo circulo
+    if (this.radius < this.thicknessPx) {
+      if (dist < this.radius)
+        return true;
+    }
+    // sismo anillo
+    else {
+      if (this.radius - this.thicknessPx <= dist && dist <= this.radius)
+        return true;
+    }
+  }
+
+
+
+
+
+  /**
+   * @param {Population} population 
+   */
+  population_in_collision(population) {
+    let dist = this.populationMap.get(population);
     if (!dist) return false;
 
     // sismo circulo

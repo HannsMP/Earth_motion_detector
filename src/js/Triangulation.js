@@ -8,12 +8,15 @@ class Triangulation {
 
   /**
    * @param {Simulator} simulator 
+   * @param {Wave} wave 
    */
-  constructor(simulator) {
+  constructor(simulator, wave) {
     this.simulator = simulator;
+    this.wave = wave;
+
     this.locked = false;
     this.estimatedEpicenter = null;
-    this.estimatedRadio = null;
+    this.estimatedRadio = wave.maxRadiusPx;
     /** @type {{node: DetectorNodes, t: number}[]} */
     this.nodes = [];
 
@@ -34,7 +37,7 @@ class Triangulation {
     if (this.nodes.length === 3) {
       this.locked = true;
       this.calculateEpicenter();
-      this.calculateRadio();
+      this.calculatePopulation();
     }
 
     return true;
@@ -91,57 +94,8 @@ class Triangulation {
 
 
 
-  calculateRadio() {
-    if (this.nodes.length === 0 || !this.estimatedEpicenter) return;
-
-    // Preparar tiempos de referencia
-    const pts = this.nodes.map(n => ({ node: n.node, t: n.t }));
-    const minT = Math.min(...pts.map(p => p.t));
-    const maxT = Math.max(...pts.map(p => p.t));
-    // Usamos maxT como instante "ahora" (última detección)
-    const refT = maxT;
-
-    // Calcula distancia desde epicentro y una estimación de radio por nodo
-    let weightedSum = 0;
-    let weightSum = 0;
-
-    for (const p of pts) {
-      const n = p.node;
-      const dt = (refT - p.t) / 1000; // segundos transcurridos desde la detección hasta refT
-      const dx = n.x - this.estimatedEpicenter.x;
-      const dy = n.y - this.estimatedEpicenter.y;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-
-      // Detectar propiedades posibles en el nodo (robusto ante distintos nombres)
-      const speed = n.speed ?? n.v ?? n.velocity ?? null; // unidad esperada: px/s (o m/s según escala)
-      const accel = n.accel ?? n.a ?? n.acceleration ?? null; // unidad esperada: px/s^2
-      const v0 = n.v0 ?? n.initialVelocity ?? 0; // si existe velocidad inicial
-
-      // Estimar radio local al tiempo refT
-      let rLocal = dist;
-      if (speed != null && !Number.isNaN(speed)) {
-        // Si nodo reporta velocidad instantánea, asumimos que la onda sigue expandiéndose a esa velocidad
-        rLocal = dist + speed * dt;
-      } else if (accel != null && !Number.isNaN(accel)) {
-        // Si solo hay aceleración, integrar con v0 si está, o suponer v0=0
-        rLocal = dist + v0 * dt + 0.5 * accel * dt * dt;
-      } else {
-        // Sin información dinámica, usamos la distancia pura
-        rLocal = dist;
-      }
-
-      // Peso: favorece nodos con información de velocidad/accel y detecciones tempranas
-      const timeWeight = 1 / (1 + ((p.t - minT) / 1000)); // earliest -> 1
-      const infoWeight = (speed != null ? 2 : (accel != null ? 1.5 : 1));
-      const w = timeWeight * infoWeight;
-
-      weightedSum += rLocal * w;
-      weightSum += w;
-    }
-
-    const estimated = weightSum > 0 ? (weightedSum / weightSum) : 0;
-
-    this.estimatedRadio = 2 * Math.max(0, estimated) * this.simulator.kmToPx;
+  calculatePopulation() {
+    this.wave.populationMap.forEach((_, population) => population.setState('alerta'));
   }
 
 
