@@ -13,6 +13,7 @@ class DetectorNodes {
    * }>} 
    */
   static EVENTS = new EventListener();
+
   /** @type {[DIRS, number, number][]} */
   static DIRS = [
     ['NO', 0, -1],
@@ -22,13 +23,22 @@ class DetectorNodes {
     ['SO', -1, 1],
     ['SE', 0, 1]
   ];
+
   /** @type {Map<string, DetectorNodes>} */
   static COLLECTION = new Map;
+
   /** @type {DetectorNodes?} */
   static CURRECT_SELECT = null;
+
   static RADIUS = 5;
+
   static HITBOX_RADIUS = 10;
+
   static ROOT_THREE = Math.sqrt(3);
+
+
+
+
 
   /**
    * @param {DetectorNodes} node 
@@ -38,6 +48,10 @@ class DetectorNodes {
     DetectorNodes.CURRECT_SELECT = node;
   }
 
+
+
+
+
   /**
    * @param {DetectorNodes} node 
    */
@@ -46,6 +60,10 @@ class DetectorNodes {
       DetectorNodes.EVENTS.emitAsync('diselected_node', DetectorNodes.CURRECT_SELECT);
     DetectorNodes.CURRECT_SELECT = null;
   }
+
+
+
+
 
   /**
    * @param {number} x 
@@ -66,6 +84,10 @@ class DetectorNodes {
     return foundNode;
   }
 
+
+
+
+
   /**
    * @param {Simulator} simulator 
    * @param {number} q 
@@ -77,6 +99,10 @@ class DetectorNodes {
     let y = centerY + (spacingPx * ((DetectorNodes.ROOT_THREE * r) / 2));
     return [x, y];
   }
+
+
+
+
 
   /** 
    * @param {Simulator} simulator 
@@ -106,6 +132,10 @@ class DetectorNodes {
     this.reset();
   }
 
+
+
+
+
   reset() {
     /** @type {keyof NODE_STATES} */
     this.state = "sintiendo";
@@ -127,6 +157,10 @@ class DetectorNodes {
     this.sampleVelocity = [];
   }
 
+
+
+
+
   linked_neighbors() {
     let { q, r, neighbors } = this;
     for (let [dir, dq, dr] of DetectorNodes.DIRS) {
@@ -137,6 +171,10 @@ class DetectorNodes {
     }
   }
 
+
+
+
+
   checkWaveCollision() {
     for (const wave of Wave.COLLECTION) {
       if (wave.collision(this))
@@ -145,6 +183,10 @@ class DetectorNodes {
 
     return false;
   }
+
+
+
+
 
   update(dt) {
     let wave = this.checkWaveCollision();
@@ -164,13 +206,9 @@ class DetectorNodes {
       this.state = 'detectado';
 
       if (emitCollision) {
+        wave.triangulation.addNode(this);
         DetectorNodes.EVENTS.emitAsync('collision_before', this);
-        // emite a los vecinos para avisarles que se detecto 
-        // los vecino se establecen en estado de 'escuchando'
-        this.emitRadio(); // faltan parametros
       }
-
-
 
       if (emitCollision)
         DetectorNodes.EVENTS.emitAsync('collision_after', this);
@@ -179,15 +217,9 @@ class DetectorNodes {
     this.events.emitAsync('update')
   }
 
-  emitRadio(HEADER, SOURCE_ID, TARGET_ID, DATA, CRC) {
-    this.neighbors.forEach(neighborNode => {
-      neighborNode.listenerRadio(HEADER, SOURCE_ID, TARGET_ID, DATA, CRC)
-    });
-  }
 
-  listenerRadio(HEADER, SOURCE_ID, TARGET_ID, DATA, CRC) {
 
-  }
+
 
   draw() {
     let ctx = this.simulator.ctx;

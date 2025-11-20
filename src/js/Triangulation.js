@@ -1,89 +1,186 @@
 class Triangulation {
-  constructor(waveSpeed = 5) { // km/s o cualquier unidad consistente
-    this.nodes = [];
-    this.waveSpeed = waveSpeed;
-    this.locked = false;
-    this.estimatedEpicenter = null;
-  }
+  /** @type {[]Triangulation} */
+  static COLLECTION = [];
+
+
+
+
 
   /**
-   * Agrega un nodo a la triangulación
-   * @param {DetectorNodes} node - Nodo que detectó el evento
-   * @param {number} timestamp - Tiempo en segundos del evento detectado
+   * @param {Simulator} simulator 
    */
-  addNode(node, timestamp) {
+  constructor(simulator) {
+    this.simulator = simulator;
+    this.locked = false;
+    this.estimatedEpicenter = null;
+    this.estimatedRadio = null;
+    /** @type {{node: DetectorNodes, t: number}[]} */
+    this.nodes = [];
+
+    Triangulation.COLLECTION.push(this);
+  }
+
+
+
+
+
+  /**
+   * @param {DetectorNodes} node - Nodo que detectó el evento
+   */
+  addNode(node) {
     if (this.locked) return false; // No se permite más de 3 nodos
-    this.nodes.push({ node, timestamp });
+    this.nodes.push({ node, t: Date.now() });
 
     if (this.nodes.length === 3) {
       this.locked = true;
       this.calculateEpicenter();
+      this.calculateRadio();
     }
+
     return true;
   }
 
-  /**
-   * Calcula el epicentro aproximado dentro del triángulo formado
-   * usando trilateración inversa basada en los tiempos de detección.
-   */
+
+
+
+
   calculateEpicenter() {
-    const [A, B, C] = this.nodes;
+    if (this.nodes.length < 3) return;
 
-    const x1 = A.node.x, y1 = A.node.y, t1 = A.timestamp;
-    const x2 = B.node.x, y2 = B.node.y, t2 = B.timestamp;
-    const x3 = C.node.x, y3 = C.node.y, t3 = C.timestamp;
+    // Extrae puntos y tiempos
+    const pts = this.nodes.map(n => ({ x: n.node.x, y: n.node.y, t: n.t }));
+    const minT = Math.min(...pts.map(p => p.t));
+    // tiempos relativos en segundos (earliest -> 0)
+    const relSec = pts.map(p => (p.t - minT) / 1000);
 
-    // Convertimos tiempos en distancias relativas (d = v * Δt)
-    const r1 = 0; // referencia (el primero en detectar)
-    const r2 = this.waveSpeed * (t2 - t1);
-    const r3 = this.waveSpeed * (t3 - t1);
+    // Centroide simple de las 3 coordenadas
+    const centroid = pts.reduce((acc, p) => {
+      acc.x += p.x; acc.y += p.y; return acc;
+    }, { x: 0, y: 0 });
 
-    // Sistema de ecuaciones lineales para resolver el punto (x, y)
-    // Basado en la trilateración 2D simplificada
-    const A1 = 2 * (x2 - x1);
-    const B1 = 2 * (y2 - y1);
-    const C1 = r1 * r1 - r2 * r2 - x1 * x1 + x2 * x2 - y1 * y1 + y2 * y2;
+    centroid.x /= pts.length;
+    centroid.y /= pts.length;
 
-    const A2 = 2 * (x3 - x1);
-    const B2 = 2 * (y3 - y1);
-    const C2 = r1 * r1 - r3 * r3 - x1 * x1 + x3 * x3 - y1 * y1 + y3 * y3;
+    // Pesos que favorecen a los detectores más tempranos.
+    // s = 1 / (1 + relSec) -> earliest (relSec=0) => s=1, luego va decreciendo.
+    const weights = relSec.map(r => 1 / (1 + r));
+    const wSum = weights.reduce((s, w) => s + w, 0) || 1;
 
-    const det = (A1 * B2 - A2 * B1);
+    const weighted = pts.reduce((acc, p, i) => {
+      acc.x += p.x * weights[i];
+      acc.y += p.y * weights[i];
+      return acc;
+    }, { x: 0, y: 0 });
 
-    if (Math.abs(det) < 1e-6) {
-      console.warn("Triangulación degenerada o nodos colineales.");
-      this.estimatedEpicenter = null;
-      return;
-    }
+    weighted.x /= wSum;
+    weighted.y /= wSum;
 
-    const x = (C1 * B2 - C2 * B1) / det;
-    const y = (A1 * C2 - A2 * C1) / det;
+    // Beta controla cuánto "jalar" desde el centroide hacia el punto ponderado.
+    // Se escala según la máxima diferencia de tiempos: si hay mucha diferencia -> beta ≈ 1.
+    const maxSec = Math.max(...relSec);
+    const beta = Math.min(1, maxSec / (maxSec + 0.5)); // 0.5s es constante ajustable
 
-    this.estimatedEpicenter = { x, y };
+    // Resultado final: interpolación entre centroide y punto ponderado
+    const fx = centroid.x * (1 - beta) + weighted.x * beta;
+    const fy = centroid.y * (1 - beta) + weighted.y * beta;
+
+    this.estimatedEpicenter = { x: fx, y: fy };
   }
 
-  /**
-   * Dibuja el triángulo y el epicentro estimado (opcional, en canvas)
-   */
-  draw(ctx) {
-    if (this.nodes.length < 2) return;
 
-    ctx.strokeStyle = "rgba(255,255,0,0.6)";
-    ctx.beginPath();
-    const { x, y } = this.nodes[0].node;
-    ctx.moveTo(x, y);
-    for (let i = 1; i < this.nodes.length; i++) {
-      ctx.lineTo(this.nodes[i].node.x, this.nodes[i].node.y);
+
+
+
+  calculateRadio() {
+    if (this.nodes.length === 0 || !this.estimatedEpicenter) return;
+
+    // Preparar tiempos de referencia
+    const pts = this.nodes.map(n => ({ node: n.node, t: n.t }));
+    const minT = Math.min(...pts.map(p => p.t));
+    const maxT = Math.max(...pts.map(p => p.t));
+    // Usamos maxT como instante "ahora" (última detección)
+    const refT = maxT;
+
+    // Calcula distancia desde epicentro y una estimación de radio por nodo
+    let weightedSum = 0;
+    let weightSum = 0;
+
+    for (const p of pts) {
+      const n = p.node;
+      const dt = (refT - p.t) / 1000; // segundos transcurridos desde la detección hasta refT
+      const dx = n.x - this.estimatedEpicenter.x;
+      const dy = n.y - this.estimatedEpicenter.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+
+      // Detectar propiedades posibles en el nodo (robusto ante distintos nombres)
+      const speed = n.speed ?? n.v ?? n.velocity ?? null; // unidad esperada: px/s (o m/s según escala)
+      const accel = n.accel ?? n.a ?? n.acceleration ?? null; // unidad esperada: px/s^2
+      const v0 = n.v0 ?? n.initialVelocity ?? 0; // si existe velocidad inicial
+
+      // Estimar radio local al tiempo refT
+      let rLocal = dist;
+      if (speed != null && !Number.isNaN(speed)) {
+        // Si nodo reporta velocidad instantánea, asumimos que la onda sigue expandiéndose a esa velocidad
+        rLocal = dist + speed * dt;
+      } else if (accel != null && !Number.isNaN(accel)) {
+        // Si solo hay aceleración, integrar con v0 si está, o suponer v0=0
+        rLocal = dist + v0 * dt + 0.5 * accel * dt * dt;
+      } else {
+        // Sin información dinámica, usamos la distancia pura
+        rLocal = dist;
+      }
+
+      // Peso: favorece nodos con información de velocidad/accel y detecciones tempranas
+      const timeWeight = 1 / (1 + ((p.t - minT) / 1000)); // earliest -> 1
+      const infoWeight = (speed != null ? 2 : (accel != null ? 1.5 : 1));
+      const w = timeWeight * infoWeight;
+
+      weightedSum += rLocal * w;
+      weightSum += w;
     }
-    ctx.closePath();
-    ctx.stroke();
 
-    // Marca del epicentro estimado
-    if (this.estimatedEpicenter) {
-      ctx.fillStyle = "red";
+    const estimated = weightSum > 0 ? (weightedSum / weightSum) : 0;
+
+    this.estimatedRadio = 2 * Math.max(0, estimated) * this.simulator.kmToPx;
+  }
+
+
+
+
+
+  draw() {
+    const ctx = this.simulator.ctx;
+    if (!this.estimatedEpicenter) return;
+
+    const { x, y } = this.estimatedEpicenter;
+    const r = Math.max(0, this.estimatedRadio ?? 0);
+
+    // Dibujar circunferencia del radio estimado (si hay radio)
+    if (r > 0) {
+      ctx.save();
+      ctx.strokeStyle = "rgba(255, 0, 0, 0.6)";
+      ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.arc(this.estimatedEpicenter.x, this.estimatedEpicenter.y, 4, 0, Math.PI * 2);
-      ctx.fill();
+      ctx.arc(x, y, r, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
     }
+
+    // Dibujar epicentro como triángulo centrado en (x,y)
+    const size = 12; // longitud de lado del triángulo
+    const h = size * Math.sqrt(3) / 2; // altura del triángulo equilátero
+    ctx.save();
+    ctx.fillStyle = "rgba(4, 0, 255, 0.97)";
+    ctx.strokeStyle = "rgba(255, 255, 0, 1)";
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    // triángulo equilátero apuntando hacia arriba, centrado en (x,y)
+    ctx.moveTo(x, y - (2 / 3) * h);           // vértice superior
+    ctx.lineTo(x - size / 2, y + (1 / 3) * h); // vértice inferior izquierdo
+    ctx.lineTo(x + size / 2, y + (1 / 3) * h); // vértice inferior derecho
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    ctx.restore();
   }
 }

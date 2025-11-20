@@ -5,7 +5,7 @@
   <meta charset="UTF-8">
   <title>Simulación Sísmica</title>
   <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
-  <link rel="stylesheet" href="/src/css/style.css">
+  <link rel="stylesheet" href="./css/style.css">
 </head>
 
 <body>
@@ -84,11 +84,11 @@
 
           <div class="col" style="justify-content: space-between; align-items: center;">
               <div class="info col">
-                <span>Estado: <span id="info-node-1"></span></span>
-                <span>Aceleracion: <span id="info-node-2"></span></span>
-                <span>Velocidad: <span id="info-node-3"></span></span>
-                <span>Duración: <span id="info-node-4"></span></span>
-                <span>Order: <span id="info-node-5"></span></span>
+                <span>Estado: <span id="info-node-1">-</span></span>
+                <span>Aceleracion: <span id="info-node-2">- Km/s²</span></span>
+                <span>Velocidad: <span id="info-node-3">- Km/s</span></span>
+                <span>Duración: <span id="info-node-4">- s</span></span>
+                <span>Order: <span id="info-node-5">- i</span></span>
               </div>
               <div class="col cords-hex">
                 <div class="row up">
@@ -118,13 +118,15 @@
   </button>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="/src/libs/EventListener.js"></script>
+  <script src="./libs/EventListener.js"></script>
 
-  <script src="/src/js/ChartLine.js"></script>
-  <script src="/src/js/DetectorNodes.js"></script>
-  <script src="/src/js/Wave.js"></script>
-  <script src="/src/js/Simulator.js"></script>
-  <script src="/src/script.js"></script>
+  <script src="./js/ChartLine.js"></script>
+  <script src="./js/Triangulation.js"></script>
+  <script src="./js/Wave.js"></script>
+  <script src="./js/Population.js"></script>
+  <script src="./js/DetectorNodes.js"></script>
+  <script src="./js/Simulator.js"></script>
+  <script src="./script.js"></script>
 </body>
 
 </html>

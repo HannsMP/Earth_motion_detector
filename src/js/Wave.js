@@ -1,15 +1,19 @@
 
 // --- Clase Onda ---
 class Wave {
+
   /** @type {Set<Wave>} */
   static COLLECTION = new Set;
+
   static MAGNITUDE = 5;
+
   static PULSE_DURATION = 5;
 
   // ecuacion empíric (km)
   static DISTANCE_MAX(richter) {
     return 1.8693 * Math.exp(0.7076 * richter); // km
   }
+
   // ecuacion empíric (s)
   static DURATION_MAX(richter) {
     return 2.7344 * Math.exp(0.4805 * richter); // s
@@ -46,6 +50,11 @@ class Wave {
     return 1;
   }
 
+
+
+
+
+
   /**
    * @param {Simulator} simulator 
    * @param {number} x 
@@ -55,6 +64,7 @@ class Wave {
     this.simulator = simulator;
     this.x = x;
     this.y = y;
+    this.triangulation = new Triangulation(simulator);
 
     // --- Distancia total y travel duration por ecuaciones empíricas ---
     this.totalDistanceKm = Wave.DISTANCE_MAX(Wave.MAGNITUDE); // km
@@ -64,7 +74,7 @@ class Wave {
     this.totalRadiusPx = this.totalDistanceKm * this.simulator.kmToPx;
 
     // max visible radius en canvas (solo condicional visual)
-    this.maxRadiusPx = maxRadio(x, y, simulator.width, simulator.height, Wave.PULSE_DURATION / 2);
+    this.maxRadiusPx = maxRadio(x, y, Simulator.WIDTH, Simulator.HEIGHT, Wave.PULSE_DURATION / 2);
     this.lifeRadiusPx = Math.min(this.maxRadiusPx, this.totalRadiusPx);
 
     // elapsed time
@@ -100,15 +110,22 @@ class Wave {
 
     this.__scan();
   }
+
+
+
+
+
   // amplitud maxima 
   get PGD() {
     if (!this.signal.length) return 0;
     return Math.max(...this.signal.map(s => Math.abs(s.amp)));
   }
+
   // velocidad en km/s (convertir px/s -> km/s)
   get PGV() {
     return this._velocityPxPerS / this.simulator.kmToPx;
   }
+
   // aceleración en km/s^2
   get PGA() {
     return this._accelPxPerS2 / this.simulator.kmToPx;
@@ -122,6 +139,8 @@ class Wave {
 
 
 
+
+
   __scan() {
     /** @type {Map<DetectorNodes, number>} */
     this.map = new Map;
@@ -132,6 +151,10 @@ class Wave {
         this.map.set(node, dist);
     })
   }
+
+
+
+
 
   collision(node) {
     let dist = this.map.get(node);
@@ -148,6 +171,10 @@ class Wave {
         return true;
     }
   }
+
+
+
+
 
   update(dt) {
     // dt en segundos
@@ -194,6 +221,10 @@ class Wave {
     }
   }
 
+
+
+
+
   draw() {
     const ctx = this.simulator.ctx;
     const color = `rgba(94,22,22,${this.alpha.toFixed(3)})`;
@@ -233,8 +264,19 @@ class Wave {
       ctx.fillStyle = color;
       ctx.fill();
     }
+
+    this.triangulation.draw();
   }
 }
+
+
+
+
+
+
+
+
+
 
 /**
  * @param {number} ax 

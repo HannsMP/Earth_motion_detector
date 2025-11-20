@@ -59,7 +59,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const MAP_SCALE = parseFloat(localStorage.getItem(CACHE_SCALE) || Simulator.MAP_SCALE);
   Simulator.MAP_SCALE = MAP_SCALE;
-  element_img.src = `/src/maps/${MAP_SCALE}km.png`;
+  element_img.src = `./maps/${MAP_SCALE}km.png`;
   elements_scale.forEach(el => {
     if (el.value != MAP_SCALE) return
     el.checked = true
@@ -112,7 +112,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let value = parseFloat(el.value);
     Simulator.MAP_SCALE = value;
     localStorage.setItem(CACHE_SCALE, value);
-    element_img.src = `/src/maps/${value}km.png`;
+    element_img.src = `./maps/${value}km.png`;
     simulator.applySettings();
   }));
   element_nodeSpacing.addEventListener('input', () => {
@@ -241,10 +241,10 @@ document.addEventListener('DOMContentLoaded', () => {
       node.events.off('update', call_temp);
       call_temp = () => {
         elements_infoNode1.innerText = node.state;
-        elements_infoNode2.innerText = node.accelerationMax.toFixed();
-        elements_infoNode3.innerText = node.velocityMax.toFixed();
-        elements_infoNode4.innerText = node.elapsed.toFixed();
-        elements_infoNode5.innerText = node.elapsed.toFixed();
+        elements_infoNode2.innerText = node.accelerationMax.toFixed(2) + ' Km/s²';
+        elements_infoNode3.innerText = node.velocityMax.toFixed(2) + ' Km/s';
+        elements_infoNode4.innerText = node.elapsed.toFixed(2) + ' s';
+        elements_infoNode5.innerText = node.elapsed.toFixed() + ' i';
       }
       node.events.on('update', call_temp);
     });
@@ -252,10 +252,9 @@ document.addEventListener('DOMContentLoaded', () => {
   elements_infoNode_dirs.forEach(el => {
     let data = { el, self: null }
     infoNode_dirs.set(el.id, data);
-    el.addEventListener('click', () => {
-      DetectorNodes.SELECT_NODE(data.self);
 
-      if (data.self) selected_node(data.self);
+    el.addEventListener('click', () => {
+      if (data.self) DetectorNodes.SELECT_NODE(data.self);
     })
   });
 

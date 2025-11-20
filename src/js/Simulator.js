@@ -6,6 +6,9 @@ class Simulator {
   static MAP_SCALE = 300;
   static OFF_SET = 10;
 
+  static WIDTH = 700;
+  static HEIGHT = 700;
+
   /** 
    * @param {HTMLImageElement} element_img 
    * @param {HTMLCanvasElement} element_mapCanvas 
@@ -40,20 +43,21 @@ class Simulator {
   applySettings() {
     Wave.COLLECTION = new Set();
 
-    this.width = this.element_mapCanvas.width;
-    this.height = this.element_mapCanvas.height;
-    this.maxLength = Math.max(this.width, this.height);
-    this.diagonal = hypotenuse(this.width, this.height);
-    this.centerX = this.width / 2;
-    this.centerY = this.height / 2;
+    Simulator.WIDTH = this.element_mapCanvas.width;
+    Simulator.HEIGHT = this.element_mapCanvas.height;
+    this.maxLength = Math.max(Simulator.WIDTH, Simulator.HEIGHT);
+    this.diagonal = hypotenuse(Simulator.WIDTH, Simulator.HEIGHT);
+    this.centerX = Simulator.WIDTH / 2;
+    this.centerY = Simulator.HEIGHT / 2;
 
+    this.generatePopulations();
     this.generateNodes();
   }
 
   generateNodes() {
     DetectorNodes.COLLECTION = new Map;
 
-    this.kmToPx = this.width / Simulator.MAP_SCALE;
+    this.kmToPx = Simulator.WIDTH / Simulator.MAP_SCALE;
     this.spacingPx = Simulator.NODE_SPACING * this.kmToPx;
     this.radius = Math.ceil(this.maxLength / this.spacingPx);
 
@@ -63,8 +67,8 @@ class Simulator {
       for (let r = -radius; r <= radius; r++) {
 
         let [x, y] = DetectorNodes.axis(this, q, r);
-        if (Simulator.OFF_SET <= x && x <= width - Simulator.OFF_SET
-          && Simulator.OFF_SET <= y && y <= height) {
+        if (Simulator.OFF_SET <= x && x <= Simulator.WIDTH - Simulator.OFF_SET
+          && Simulator.OFF_SET <= y && y <= Simulator.HEIGHT) {
 
           let node = new DetectorNodes(this, q, r, x, y);
           DetectorNodes.COLLECTION.set(node.name, node);
@@ -75,13 +79,21 @@ class Simulator {
     DetectorNodes.COLLECTION.forEach(node => node.linked_neighbors());
   }
 
+  generatePopulations() {
+    Population.COLLECTION = new Map;
+
+    for (let [name, x, y, size] of point_population[Simulator.MAP_SCALE])
+      new Population(this, name, x, y, size);
+
+  }
+
   addWave(e) {
     const rect = this.element_mapCanvas.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
 
-    const scaleX = this.element_mapCanvas.width / rect.width;
-    const scaleY = this.element_mapCanvas.height / rect.height;
+    const scaleX = Simulator.WIDTH / rect.width;
+    const scaleY = Simulator.HEIGHT / rect.height;
 
     const canvasX = x * scaleX;
     const canvasY = y * scaleY;
@@ -95,8 +107,8 @@ class Simulator {
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
 
-    const scaleX = this.element_mapCanvas.width / rect.width;
-    const scaleY = this.element_mapCanvas.height / rect.height;
+    const scaleX = Simulator.WIDTH / rect.width;
+    const scaleY = Simulator.HEIGHT / rect.height;
 
     const canvasX = x * scaleX;
     const canvasY = y * scaleY;
@@ -127,8 +139,14 @@ class Simulator {
   }
 
   draw() {
-    this.ctx.drawImage(this.element_img, 0, 0, this.width, this.height);
+    this.ctx.drawImage(this.element_img, 0, 0, Simulator.WIDTH, Simulator.HEIGHT);
     Wave.COLLECTION.forEach(wave => wave.draw());
+
+    // Dibujar poblaciones (si existen)
+    if (typeof Population !== 'undefined' && Population.COLLECTION) {
+      Population.COLLECTION.forEach(p => p.draw());
+    }
+
     DetectorNodes.COLLECTION.forEach(node => node.draw());
   }
 
@@ -150,4 +168,135 @@ class Simulator {
       loop(timestamp);
     });
   }
+}
+
+
+
+
+
+
+
+
+
+
+function rnd(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min
+};
+function generadorPoint(name = '-', size = 10) {
+  const W = 700, H = 700;
+  const MARGIN = 8;
+  return [name, rnd(MARGIN, W - MARGIN), rnd(MARGIN, H - MARGIN), size];
+}
+
+/** @type {{[key_map]: [nombre: string, x: number, y: number][]}} */
+const point_population = {
+  // Las coordenadas son fracciones relativas al canvas: [nombre, fracX, fracY, tamañoPx?]
+  300: [
+    ["A", 0, 155, 20],
+    ["B", 85, 255, 20],
+    ["C", 115, 315, 20],
+    ["D", 135, 395, 30],
+    ["E", 215, 515, 20],
+    ["F", 285, 615, 20],
+    ["G", 355, 685, 20],
+    ['H', 576, 167, 10],
+    ['I', 506, 260, 10],
+    ['J', 318, 458, 10],
+    ['K', 645, 219, 10],
+    ['L', 349, 531, 10],
+    ['M', 166, 272, 10],
+    ['N', 280, 187, 10],
+    ['Ñ', 300, 528, 10],
+    ['O', 31, 118, 10],
+    ['P', 354, 82, 10],
+    ['Q', 651, 436, 10],
+    ['R', 314, 135, 10],
+    ['S', 584, 345, 10],
+    ['T', 642, 380, 10],
+    ['V', 638, 577, 10],
+    ['X', 517, 501, 10],
+    ['Y', 401, 345, 10],
+    ['Z', 412, 462, 10],
+  ],
+  500: [
+    ["A", 0, 155, 20],
+    ["B", 85, 255, 20],
+    ["C", 115, 315, 20],
+    ["D", 75, 395, 30],
+    ["E", 215, 515, 20],
+    ["F", 285, 615, 20],
+    ["G", 215, 685, 20],
+    ['H', 576, 167, 10],
+    ['I', 506, 260, 10],
+    ['J', 318, 458, 10],
+    ['K', 645, 219, 10],
+    ['L', 349, 531, 10],
+    ['M', 166, 272, 10],
+    ['N', 280, 187, 10],
+    ['Ñ', 300, 528, 10],
+    ['O', 31, 118, 10],
+    ['P', 354, 82, 10],
+    ['Q', 651, 436, 10],
+    ['R', 314, 135, 10],
+    ['S', 584, 345, 10],
+    ['T', 642, 380, 10],
+    ['V', 638, 577, 10],
+    ['X', 517, 501, 10],
+    ['Y', 401, 345, 10],
+    ['Z', 412, 462, 10],
+  ],
+  1000: [
+    ["A", 0, 155, 20],
+    ["B", 85, 255, 20],
+    ["C", 115, 315, 20],
+    ["D", 50, 515, 30],
+    ["E", 215, 515, 20],
+    ["F", 285, 615, 20],
+    ["G", 355, 685, 20],
+    ['H', 576, 167, 10],
+    ['I', 506, 260, 10],
+    ['J', 318, 458, 10],
+    ['K', 645, 219, 10],
+    ['L', 349, 531, 10],
+    ['M', 166, 272, 10],
+    ['N', 280, 187, 10],
+    ['Ñ', 300, 528, 10],
+    ['O', 31, 118, 10],
+    ['P', 354, 82, 10],
+    ['Q', 651, 436, 10],
+    ['R', 314, 135, 10],
+    ['S', 584, 345, 10],
+    ['T', 642, 380, 10],
+    ['V', 638, 577, 10],
+    ['X', 517, 501, 10],
+    ['Y', 401, 345, 10],
+    ['Z', 412, 462, 10],
+  ],
+  3000: [
+    ["A", 0, 155, 20],
+    ["B", 85, 255, 20],
+    ["C", 115, 315, 20],
+    ["D", 25, 395, 30],
+    ["E", 215, 515, 20],
+    ["F", 285, 615, 20],
+    ["G", 355, 685, 20],
+    ['H', 576, 167, 10],
+    ['I', 506, 260, 10],
+    ['J', 318, 458, 10],
+    ['K', 645, 219, 10],
+    ['L', 349, 531, 10],
+    ['M', 166, 272, 10],
+    ['N', 280, 187, 10],
+    ['Ñ', 300, 528, 10],
+    ['O', 31, 118, 10],
+    ['P', 354, 82, 10],
+    ['Q', 651, 436, 10],
+    ['R', 314, 135, 10],
+    ['S', 584, 345, 10],
+    ['T', 642, 380, 10],
+    ['V', 638, 577, 10],
+    ['X', 517, 501, 10],
+    ['Y', 401, 345, 10],
+    ['Z', 412, 462, 10],
+  ],
 }
