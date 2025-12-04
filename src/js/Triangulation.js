@@ -113,7 +113,7 @@ class Triangulation {
     if (r > 0) {
       ctx.save();
       ctx.strokeStyle = "rgba(255, 0, 0, 0.6)";
-      ctx.lineWidth = 2;
+      ctx.lineWidth = 5;
       ctx.beginPath();
       ctx.arc(x, y, r, 0, Math.PI * 2);
       ctx.stroke();
